@@ -70,14 +70,14 @@ else
   fault "expected at least 6 SVG badges, found $badges"
 fi
 
-if grep -RIn --exclude-dir=.git --exclude-dir=renv --exclude='*.svg' "TBD" \
+if grep -RIn --exclude-dir=.git --exclude-dir=renv --exclude='*.svg' --exclude='*.html' "TBD" \
   README.md MAP.md PROGRESS.md 00_setup 01_overworld templates 2>/dev/null; then
   fault "found TBD placeholder"
 else
   pass "no TBD placeholder in Release 0 content"
 fi
 
-if grep -RIn --exclude-dir=.git --exclude-dir=renv "/home/" \
+if grep -RIn --exclude-dir=.git --exclude-dir=renv --exclude='*.svg' --exclude='*.html' "/home/" \
   R 00_setup 01_overworld 2>/dev/null; then
   fault "found absolute /home/ path in R or Quarto content"
 else

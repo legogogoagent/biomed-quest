@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="红石工程师">
+  <rect width="128" height="128" rx="12" fill="#331c1c"/>
+  <rect x="12" y="12" width="104" height="104" fill="none" stroke="#e07f7f" stroke-width="4"/>
+  <rect x="20" y="20" width="16" height="16" fill="#e07f7f" opacity="0.35"/>
+  <rect x="92" y="20" width="16" height="16" fill="#e07f7f" opacity="0.35"/>
+  <rect x="20" y="92" width="16" height="16" fill="#e07f7f" opacity="0.35"/>
+  <rect x="92" y="92" width="16" height="16" fill="#e07f7f" opacity="0.35"/>
+  <text x="64" y="60" text-anchor="middle" font-family="monospace" font-size="16" font-weight="bold" fill="#e07f7f">红石工程师</text>
+  <text x="64" y="84" text-anchor="middle" font-family="monospace" font-size="9" fill="#e07f7f">REDSTONE ENGINEER</text>
+</svg>
