@@ -1,0 +1,32 @@
+# R / RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+renv/library/
+renv/python/
+renv/staging/
+
+# Quarto
+.Rproj.user
+*_files/
+/.quarto/
+
+# Generated learner output
+output/
+data/processed/*
+!data/processed/.gitkeep
+
+# Large data
+data/raw/*.rds
+data/raw/*.h5
+data/raw/*.h5ad
+data/raw/*.bam
+data/raw/*.fastq
+data/raw/*.fastq.gz
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
