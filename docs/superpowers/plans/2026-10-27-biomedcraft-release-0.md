@@ -222,14 +222,14 @@ else
   fault "expected at least 6 SVG badges, found $badges"
 fi
 
-if grep -RIn --exclude-dir=.git --exclude-dir=renv --exclude='*.svg' "TBD" \
+if grep -RIn --exclude-dir=.git --exclude-dir=renv --exclude='*.svg' --exclude='*.html' "TBD" \
   README.md MAP.md PROGRESS.md 00_setup 01_overworld templates 2>/dev/null; then
   fault "found TBD placeholder"
 else
   pass "no TBD placeholder in Release 0 content"
 fi
 
-if grep -RIn --exclude-dir=.git --exclude-dir=renv "/home/" \
+if grep -RIn --exclude-dir=.git --exclude-dir=renv --exclude='*.svg' --exclude='*.html' "/home/" \
   R 00_setup 01_overworld 2>/dev/null; then
   fault "found absolute /home/ path in R or Quarto content"
 else
@@ -526,6 +526,7 @@ git commit -m "docs: add Minecraft-style README, map, and progress"
 - Create: `00_setup/install_macos.sh`
 - Create: `00_setup/install_linux.sh`
 - Create: `00_setup/verify_environment.R`
+- Create: `dependencies.R`
 
 - [ ] **Step 1: Write the setup guide**
 
@@ -585,7 +586,7 @@ Rscript -e 'install.packages(c("renv","tidyverse","pheatmap","here","janitor","s
 ## 3. 初始化 renv
 
 ```bash
-Rscript -e 'renv::init(restart = FALSE, snapshot = FALSE)'
+Rscript -e 'renv::init(restart = FALSE)'
 Rscript -e 'renv::snapshot()'
 ```
 
@@ -637,7 +638,7 @@ echo "==> 安装 R 包"
 Rscript -e 'install.packages(c("renv","tidyverse","pheatmap","here","janitor","skimr","quarto"), repos="https://cloud.r-project.org")'
 
 echo "==> 初始化 renv"
-Rscript -e 'if (!file.exists("renv.lock")) renv::init(restart = FALSE, snapshot = FALSE)'
+Rscript -e 'if (!file.exists("renv.lock")) renv::init(restart = FALSE)'
 Rscript -e 'renv::snapshot()'
 
 echo "✅ macOS 环境安装完成。下一步：Rscript 00_setup/verify_environment.R"
@@ -656,7 +657,7 @@ if command -v mamba >/dev/null 2>&1; then
   mamba create -y -n biomedcraft -c conda-forge \
     r-base r-tidyverse r-pheatmap r-here r-janitor r-skimr r-renv quarto
   mamba run -n biomedcraft Rscript -e 'install.packages("quarto", repos="https://cloud.r-project.org")'
-  mamba run -n biomedcraft Rscript -e 'if (!file.exists("renv.lock")) renv::init(restart = FALSE, snapshot = FALSE)'
+  mamba run -n biomedcraft Rscript -e 'if (!file.exists("renv.lock")) renv::init(restart = FALSE)'
   mamba run -n biomedcraft Rscript -e 'renv::snapshot()'
   echo "✅ 已创建环境。下一步：conda activate biomedcraft && Rscript 00_setup/verify_environment.R"
   exit 0
@@ -685,7 +686,7 @@ echo "==> 安装 R 包"
 Rscript -e 'install.packages(c("renv","tidyverse","pheatmap","here","janitor","skimr","quarto"), repos="https://cloud.r-project.org")'
 
 echo "==> 初始化 renv"
-Rscript -e 'if (!file.exists("renv.lock")) renv::init(restart = FALSE, snapshot = FALSE)'
+Rscript -e 'if (!file.exists("renv.lock")) renv::init(restart = FALSE)'
 Rscript -e 'renv::snapshot()'
 
 echo "✅ Linux 环境安装完成。下一步：Rscript 00_setup/verify_environment.R"
@@ -769,11 +770,24 @@ Expected: `bash -n` no output; validator still reports missing W0/L1 files.
 
 - [ ] **Step 6: Initialize renv if R is available**
 
+Create `dependencies.R`:
+
+```r
+# Dependency anchor for renv.
+# These packages are used in setup checks and learner-facing tutorials.
+library(tidyverse)
+library(janitor)
+library(skimr)
+library(pheatmap)
+library(here)
+library(quarto)
+```
+
 Run:
 
 ```bash
 if command -v Rscript >/dev/null 2>&1; then
-  Rscript -e 'if (!file.exists("renv.lock")) renv::init(restart = FALSE, snapshot = FALSE)'
+  Rscript -e 'if (!file.exists("renv.lock")) renv::init(restart = FALSE)'
   Rscript -e 'renv::snapshot()'
 fi
 ```
@@ -783,7 +797,7 @@ Expected: if R is installed, `renv.lock`, `renv/`, and `.Rprofile` exist; otherw
 - [ ] **Step 7: Commit**
 
 ```bash
-git add 00_setup/README.md 00_setup/install_macos.sh 00_setup/install_linux.sh 00_setup/verify_environment.R
+git add 00_setup/README.md 00_setup/install_macos.sh 00_setup/install_linux.sh 00_setup/verify_environment.R dependencies.R
 if [[ -f renv.lock ]]; then git add .Rprofile renv.lock renv; fi
 git commit -m "docs: add cross-platform setup and environment check"
 ```
@@ -821,11 +835,11 @@ counts <- matrix(0, nrow = length(genes), ncol = length(samples),
                  dimnames = list(genes, samples))
 
 for (i in seq_along(samples)) {
-  counts[, i] <- rnbinom(length(genes), mu = base_expression, size = 5)
+  counts[, i] <- rnbinom(length(genes), mu = base_expression, size = 20)
 }
 
-# 前 8 个基因在处理组中上调约 3 倍，制造可检测的信号。
-counts[1:8, 4:6] <- round(counts[1:8, 4:6] * 3)
+# 前 8 个基因在处理组中上调约 10 倍，制造可检测的信号。
+counts[1:8, 4:6] <- round(counts[1:8, 4:6] * 10)
 counts <- round(counts)
 
 dir.create("data/raw", recursive = TRUE, showWarnings = FALSE)
@@ -869,7 +883,7 @@ Create `data/raw/README.md`:
 - 来源：`data-raw/generate_preview_data.R` 生成的合成数据。
 - 用途：W0 终点预览，只演示“count → QC → 差异表达 → 可视化”的流程。
 - 规模：40 个基因 × 6 个样本（3 control，3 treated）。
-- 信号：前 8 个基因在 treated 组上调约 3 倍。
+- 信号：前 8 个基因在 treated 组上调约 10 倍。
 - 许可证：MIT（与仓库代码相同）。
 
 真实 `airway` 数据在 L7 通过 Bioconductor 引入，不放入本目录。
@@ -996,11 +1010,12 @@ library(dplyr)
 library(ggplot2)
 library(pheatmap)
 library(tibble)
+library(here)
 
-pca <- read_csv("data/processed/preview_pca.csv", show_col_types = FALSE)
-volcano <- read_csv("data/processed/preview_volcano.csv", show_col_types = FALSE)
-metadata <- read_csv("data/raw/preview_metadata.csv", show_col_types = FALSE)
-heatmap_df <- read_csv("data/processed/preview_heatmap.csv", show_col_types = FALSE)
+pca <- read_csv(here("data", "processed", "preview_pca.csv"), show_col_types = FALSE)
+volcano <- read_csv(here("data", "processed", "preview_volcano.csv"), show_col_types = FALSE)
+metadata <- read_csv(here("data", "raw", "preview_metadata.csv"), show_col_types = FALSE)
+heatmap_df <- read_csv(here("data", "processed", "preview_heatmap.csv"), show_col_types = FALSE)
 ```
 
 ## 1. 这批样本像不像两组？

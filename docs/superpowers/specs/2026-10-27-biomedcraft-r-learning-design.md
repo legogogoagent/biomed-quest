@@ -247,6 +247,7 @@ biomed-quest/
 ├── renv.lock                 # 包版本锁定
 ├── renv/                     # renv 项目库
 ├── .Rprofile                 # renv 激活配置
+├── dependencies.R            # renv 依赖锚点
 ├── 00_setup/                 # 安装、renv、Git、macOS/Linux 差异
 ├── 01_overworld/             # L1–L4 + 小 Boss 1
 ├── 02_nether/                # L5–L8 + 小 Boss 2
