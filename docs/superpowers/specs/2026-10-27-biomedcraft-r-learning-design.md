@@ -72,8 +72,8 @@
 
 | 幕 | 周 | 单元 | 核心内容 | 通关产出 |
 |---|---|---|---|---|
-| 预热 | W0 | 终点预览 | 跑通一个打包好的 airway 子集迷你分析（预处理数据） | 3 个问题 + 环境截图 |
-| 主世界 | W1 | L1 新手村 | R/RStudio/Quarto/Git、对象与向量 | `hello.R` + `hello.qmd` + 第一次 commit |
+| 预热 | W0 | 终点预览 | 跑通一个打包好的 airway 风格合成子集迷你分析 | 3 个问题 + 环境截图 |
+| 主世界 | W1 | L1 新手村 | R/RStudio/Quarto/Git、对象与向量 | `quest.R` + `hello.qmd` + 第一次 commit |
 | | W2 | L2 合成台 | 数据框、类型、函数、条件、`apply` 家族 | Minecraft 合成表小函数 |
 | | W3 | L3 工作台 | 读 CSV、`dplyr` 五动词、缺失值、连接 | 清洗脚本 + 数据字典 |
 | | W4 | L4 地图 | `ggplot2` 几何对象、分面、图注、配色 | 4 张图 + 一页图说 |
@@ -102,7 +102,7 @@
 ### L1 新手村：第一次进入世界
 
 - 学习目标：安装 R、RStudio/Positron、Quarto、Git；理解对象、向量、数据类型；完成第一次 commit。
-- 任务卡：创建 `hello.R`，打印玩家名、当前周、学习目标；创建 `hello.qmd` 并渲染。
+- 任务卡：完成 `quest.R`，写入玩家名、等级和 3 个目标；完成 `hello.qmd` 并渲染。
 - 自检：`check_level_01.R` 检查文件存在、脚本可运行、Quarto 输出存在。
 - 复盘三问：哪一步最卡？报错说明了什么？下次如何更快？
 - 成就：木镐（第一次跑通 R 脚本）。
@@ -245,6 +245,8 @@ biomed-quest/
 ├── _quarto.yml               # 教程与报告的统一配置
 ├── biomed-quest.Rproj        # RStudio 项目文件
 ├── renv.lock                 # 包版本锁定
+├── renv/                     # renv 项目库
+├── .Rprofile                 # renv 激活配置
 ├── 00_setup/                 # 安装、renv、Git、macOS/Linux 差异
 ├── 01_overworld/             # L1–L4 + 小 Boss 1
 ├── 02_nether/                # L5–L8 + 小 Boss 2
@@ -254,11 +256,13 @@ biomed-quest/
 │   ├── raw/                  # 小数据入库；大数据只放下载脚本
 │   ├── processed/            # 可复现生成的中间数据
 │   └── README.md             # 来源、许可证、下载方式
+├── data-raw/                 # 数据生成脚本
 ├── R/                        # 可复用函数
 ├── docs/                     # Quarto 教程（中文正文 + 英文 TL;DR）
 ├── journal/                  # 每周复盘 + ai-log.md
 ├── templates/                # 任务卡、复盘、代码审查、Boss 战报
 ├── solutions/                # 通关后解锁的参考解，不提前下发
+├── scripts/                  # 静态校验与维护脚本
 └── assets/badges/            # 自绘像素风 SVG 徽章
 ```
 
@@ -352,7 +356,7 @@ quarto render 00_setup/preview.qmd
 
 | ID | 成就 | 条件 | 证据 |
 |---|---|---|---|
-| A01 | 木镐 | 第一次跑通 R 脚本 | `hello.R` + commit |
+| A01 | 木镐 | 第一次跑通 R 脚本 | `quest.R` + `output/hello.txt` + commit |
 | A02 | 第一次合成 | 第一个 `dplyr` 管道或函数 | `crafting.R` |
 | A03 | 工作台 | 完成一次可复现清洗 | 清洗脚本 + 数据字典 |
 | A04 | 地图绘制者 | 第一张完整 `ggplot` | 图 + 图注 |
@@ -455,7 +459,7 @@ AI 可以追问，直到这 5 句没有含糊词（如“大概”“可能”�
 
 | 阶段 | 数据 | 用途 | 许可/来源 |
 |---|---|---|---|
-| W0 | `airway` 预处理子集（内置 CSV） | 终点预览，不要求安装 Bioconductor | Bioconductor，开放 |
+| W0 | airway 风格合成 count 子集（内置 CSV） | 终点预览，不要求安装 Bioconductor | 脚本生成，MIT |
 | L2 | 合成 Minecraft 合成表 | 数据框与函数 | 自建，MIT |
 | L3 | `survival::lung` | 临床表格清洗 | `survival` 包，开放 |
 | L3 | 合成 Minecraft 玩家数据 | 分组、连接、缺失值 | 自建，MIT |
@@ -521,7 +525,7 @@ AI 可以追问，直到这 5 句没有含糊词（如“大概”“可能”�
 1. 初始化私有 `biomed-quest` 仓库骨架（本地 Git，不配置远程）。
 2. Minecraft 风 `README.md`、`MAP.md`、`PROGRESS.md`。
 3. `00_setup/`：macOS/Linux 安装指南、`renv` 初始化、Git 第一次提交教程。
-4. W0 终点预览：可运行的 `preview.qmd`，用内置的 `airway` 预处理子集生成 PCA/火山图/热图，不要求安装 Bioconductor。
+4. W0 终点预览：可运行的 `preview.qmd`，用内置的 airway 风格合成 count 子集生成 PCA/火山图/热图，不要求安装 Bioconductor。
 5. L1 完整内容：任务卡、概念讲解、热身、主任务、自检、复盘模板、木镐徽章；参考解放入 `solutions/`，通关后解锁。
 6. `templates/`：任务卡、复盘、代码审查、Boss 战报、AI 日志。
 7. `assets/badges/`：至少 6 枚自绘 SVG 徽章。
