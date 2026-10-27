@@ -2,7 +2,7 @@
 
 ## 已完成
 
-- 私有学习库骨架
+- 公开学习库骨架
 - Minecraft 风 README、地图、进度
 - macOS/Linux 安装与环境检查
 - W0 终点预览（airway 风格合成数据）
@@ -40,6 +40,6 @@ macOS 请按 `00_setup/README.md` 使用 Homebrew。
 
 ## 需要用户确认
 
-- 是否把当前仓库推送到 GitHub 私有远程。
+- 已推送到 GitHub 公开远程（legogogoagent/biomed-quest）。
 - 是否现在创建公开作品集远程。
 - 是否把 `00_setup/preview.html` 保留在仓库中，还是只保留 `preview.qmd`。

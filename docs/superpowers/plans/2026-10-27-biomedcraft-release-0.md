@@ -4,7 +4,7 @@
 
 **Goal:** Build the first working version of the BiomedCraft learning repo: Minecraft-style README/map/progress, setup guide, W0 preview, L1 quest, templates, badges, and a public portfolio skeleton.
 
-**Architecture:** The current repository (`/home/aigc/Project/Biomedical`) becomes the private `biomed-quest` repo. A sibling directory (`/home/aigc/Project/biomed-portfolio`) becomes the public portfolio repo. Release 0 is content-first: static validation runs without R, while runtime validation (W0 render, L1 check) requires R and Quarto installed by the learner.
+**Architecture:** The current repository (`/home/aigc/Project/Biomedical`) becomes the public `biomed-quest` repo. A sibling directory (`/home/aigc/Project/biomed-portfolio`) becomes the public portfolio repo. Release 0 is content-first: static validation runs without R, while runtime validation (W0 render, L1 check) requires R and Quarto installed by the learner.
 
 **Tech Stack:** R 4.2+, Quarto 1.5+, renv, tidyverse, pheatmap, Git, Bash.
 
@@ -1793,7 +1793,7 @@ Create `/home/aigc/Project/biomed-portfolio/README.md`:
 
 > 从 R 零基础到独立基因分析的项目作品集。
 
-这是 BiomedCraft 学习仓库的公开作品集。学习过程和草稿保留在私有仓库；这里只放完成并审查过的项目。
+这是 BiomedCraft 学习仓库的公开作品集。完整学习过程在公开的 BiomedCraft 仓库；这里只放完成并审查过的项目。
 
 ## 项目
 
@@ -1996,7 +1996,7 @@ Create `journal/w00-handoff.md`:
 
 ## 已完成
 
-- 私有学习库骨架
+- 公开学习库骨架
 - Minecraft 风 README、地图、进度
 - macOS/Linux 安装与环境检查
 - W0 终点预览
@@ -2013,7 +2013,7 @@ Create `journal/w00-handoff.md`:
 
 ## 需要用户确认
 
-- 是否把当前仓库推送到 GitHub 私有远程。
+- 已推送到 GitHub 公开远程（legogogoagent/biomed-quest）。
 - 是否现在创建公开作品集远程。
 ```
 
