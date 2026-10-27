@@ -1,0 +1,107 @@
+---
+title: "W0 终点预览：从 count 到生物学"
+subtitle: "BiomedCraft · 先看看终点长什么样"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(pheatmap)
+library(tibble)
+library(here)
+
+pca <- read_csv(here("data", "processed", "preview_pca.csv"), show_col_types = FALSE)
+volcano <- read_csv(here("data", "processed", "preview_volcano.csv"), show_col_types = FALSE)
+metadata <- read_csv(here("data", "raw", "preview_metadata.csv"), show_col_types = FALSE)
+heatmap_df <- read_csv(here("data", "processed", "preview_heatmap.csv"), show_col_types = FALSE)
+```
+
+## 1. 这批样本像不像两组？
+
+```{r}
+#| label: pca
+ggplot(pca, aes(x = PC1, y = PC2, color = condition, label = sample)) +
+  geom_point(size = 4) +
+  geom_text(vjust = -0.8, size = 3) +
+  labs(
+    title = "PCA: samples separate by condition",
+    x = "PC1",
+    y = "PC2",
+    color = "Condition"
+  ) +
+  theme_minimal()
+```
+
+> 人话：如果两组样本在 PCA 上分开，说明处理效应比样本间噪声更明显。
+
+## 2. 哪些基因发生了变化？
+
+```{r}
+#| label: volcano
+volcano |>
+  mutate(significant = p_adj < 0.05) |>
+  ggplot(aes(x = log2fc, y = -log10(p_value), color = significant)) +
+  geom_point(size = 2) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "grey50") +
+  labs(
+    title = "Volcano plot: treated vs control",
+    x = "log2 fold change",
+    y = "-log10(p-value)",
+    color = "padj < 0.05"
+  ) +
+  theme_minimal()
+```
+
+> 人话：越靠右上/左上的基因，变化越大、证据越强。这里只是预览，正式分析要用 DESeq2。
+
+## 3. 显著基因长什么样？
+
+```{r}
+#| label: heatmap
+#| fig-width: 7
+#| fig-height: 5
+
+heat_matrix <- heatmap_df |>
+  column_to_rownames("gene") |>
+  as.matrix()
+
+annotation_col <- metadata |>
+  column_to_rownames("sample") |>
+  select(condition)
+
+pheatmap(
+  heat_matrix,
+  scale = "row",
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  annotation_col = annotation_col,
+  main = "Top 15 genes (row-scaled log2 counts)",
+  fontsize_row = 8
+)
+```
+
+> 人话：热图把“哪些基因在哪些样本里高/低”压缩成颜色。聚类告诉你样本和基因是否成群。
+
+## 4. 你现在需要做什么？
+
+1. 把这份报告渲染出来。
+2. 写下 3 个你现在看不懂的问题。
+3. 保存到 `journal/w00.md`。
+
+## 5. 环境
+
+```{r}
+#| label: session
+sessionInfo()
+```
