@@ -1,0 +1,9 @@
+---
+title: "L1 玩家档案"
+format: html
+---
+
+```{r}
+# 读取 output/hello.txt 并打印
+# 提示：readLines("output/hello.txt")
+```

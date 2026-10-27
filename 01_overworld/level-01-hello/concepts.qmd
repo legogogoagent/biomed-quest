@@ -1,0 +1,88 @@
+---
+title: "L1 概念补给：R 世界的基本方块"
+format: html
+---
+
+## English TL;DR
+
+- R stores data in objects; vectors are the basic 1D container.
+- A data frame is a table with named columns.
+- Functions take inputs, do work, and return outputs.
+- RStudio has four useful panes: source, console, environment, files/plots.
+- Quarto turns code and text into a report; Git saves versions.
+
+## 1. 对象：给数据起名字
+
+```{r}
+player_name <- "Alex"
+player_level <- 1
+```
+
+`<-` 是赋值。左边是名字，右边是值。
+
+## 2. 向量：一排同类数据
+
+```{r}
+goals <- c("完成 W0", "通过 L1", "写下解释")
+goals
+length(goals)
+```
+
+`c()` 把多个值组合成一个向量。向量里的元素类型要一致。
+
+## 3. 数据框：一张表
+
+```{r}
+player <- data.frame(
+  name = c("Alex", "Steve"),
+  level = c(1, 2),
+  goal = c("学 R", "做分析")
+)
+player
+str(player)
+summary(player)
+```
+
+- 每一列是一个变量。
+- 每一行是一个观测。
+- `str()` 看结构，`summary()` 看摘要。
+
+## 4. 函数：可重复的动作
+
+```{r}
+greet <- function(name, level) {
+  paste0("欢迎，", name, "！你现在是 Lv.", level)
+}
+
+greet("Alex", 1)
+```
+
+函数让重复动作只写一次。参数是输入，返回值是输出。
+
+## 5. RStudio 的四个窗格
+
+| 窗格 | 用途 |
+|---|---|
+| Source | 写脚本，保存为 `.R` |
+| Console | 立即运行一行代码 |
+| Environment | 看当前有哪些对象 |
+| Files / Plots / Help | 文件、图、文档 |
+
+## 6. Quarto：代码 + 文字 = 报告
+
+Quarto 文件是 `.qmd`。代码放在三个反引号加 `{r}` 的 chunk 里，文字用 Markdown 写。点击 Render 生成 HTML。
+
+## 7. Git：保存世界
+
+- `git status`：看发生了什么变化。
+- `git add 文件`：把变化放进存档。
+- `git commit -m "说明"`：真正保存一个版本。
+- `git log --oneline`：看历史。
+
+## 自检问题
+
+1. `<-` 和 `=` 在这个关卡里都能赋值，但社区更常用哪个？
+2. 向量和数据框的区别是什么？
+3. 函数没有 `return()` 时，返回什么？
+4. `str()` 和 `summary()` 各看什么？
+5. commit 之前为什么要先 `git status`？
