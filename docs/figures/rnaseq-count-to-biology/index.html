@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RNA-seq: from count to biology</title>
+<style>
+  :root{
+    --paper:#fffdf8;
+    --ground:#efe9df;
+    --ink:#263238;
+    --muted:#6b7a86;
+    --rule:#d8cebd;
+    --control:#38bdf8;
+    --treated:#fb7185;
+    --sig:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    margin:0;
+    padding:28px;
+    display:grid;
+    place-items:center;
+    background:
+      linear-gradient(#00000008 1px, transparent 1px),
+      linear-gradient(90deg, #00000008 1px, transparent 1px),
+      var(--ground);
+    background-size:28px 28px;
+    color:var(--ink);
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .figure-card{
+    width:min(1180px, 100%);
+    background:var(--paper);
+    border:1px solid #cfc4b2;
+    box-shadow:0 22px 60px #3b2f1f1f, 0 1px 0 #fff inset;
+    padding:16px 18px 14px;
+  }
+  .fig-head{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--rule);
+  }
+  .fig-no{
+    font-size:11px;
+    letter-spacing:.14em;
+    color:#8a7b66;
+    white-space:nowrap;
+  }
+  h1{
+    margin:0;
+    font-size:clamp(16px, 2.1vw, 22px);
+    letter-spacing:-.01em;
+    line-height:1.2;
+  }
+  .fig-sub{
+    margin-left:auto;
+    font-size:12px;
+    color:#7b6d5b;
+    text-align:right;
+  }
+  .stage{
+    margin-top:12px;
+    background:#f7f1e7;
+    border:1px solid #ded3c1;
+    overflow:hidden;
+  }
+  svg{display:block;width:100%;height:auto}
+  .readout{
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    padding:10px 2px 8px;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .numbers{white-space:nowrap}
+  .numbers b{color:#b45309}
+  .caption{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    border-top:1px solid var(--rule);
+    padding-top:10px;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .dot{
+    display:inline-block;
+    width:8px;
+    height:8px;
+    margin-right:5px;
+    border-radius:2px;
+    vertical-align:1px;
+  }
+  .dot.control{background:var(--control)}
+  .dot.treated{background:var(--treated)}
+  .dot.sig{background:var(--sig)}
+  .caption-text{margin-left:auto;text-align:right}
+  @media (max-width:720px){
+    body{padding:8px}
+    .figure-card{padding:10px}
+    .fig-head{flex-wrap:wrap;gap:4px 12px}
+    .fig-sub{margin-left:0;width:100%;text-align:left}
+    .stage{overflow-x:auto}
+    svg{min-width:760px}
+    .readout{flex-direction:column;gap:4px}
+    .numbers{white-space:normal}
+    .caption{flex-wrap:wrap;gap:8px 14px}
+    .caption-text{margin-left:0;width:100%;text-align:left}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{scroll-behavior:auto !important}
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <figure class="figure-card" aria-labelledby="fig-title">
+    <header class="fig-head">
+      <span class="fig-no">FIG. 01</span>
+      <h1 id="fig-title">RNA-seq: from count to biology</h1>
+      <p class="fig-sub">count matrix → comparison → FDR gate → volcano → interpretation</p>
+    </header>
+
+    <div class="stage">
+      <svg id="scene" viewBox="390 430 640 500" role="img" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">RNA-seq from count to biology, an isometric test rig</title>
+        <desc id="svg-desc">A benchtop machine reads six RNA-seq samples, compares control and treated counts on a beam, passes eight significant genes through an FDR gate, plots a volcano plot, and outputs three biology cards.</desc>
+      </svg>
+    </div>
+
+    <div class="readout" aria-live="polite">
+      <span class="hint">read the rack · compare · pass FDR · write biology</span>
+      <span class="numbers"><b>6</b> samples · <b>40</b> genes · <b>8</b> DE · FDR &lt; 0.05</span>
+    </div>
+
+    <figcaption class="caption">
+      <span><i class="dot control"></i>control</span>
+      <span><i class="dot treated"></i>treated</span>
+      <span><i class="dot sig"></i>significant</span>
+      <span class="caption-text">The object is the explanation: count, compare, gate, plot, interpret.</span>
+    </figcaption>
+  </figure>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const svg = document.getElementById("scene");
+  const C = {
+    ink: "#263238",
+    soft: "#5b6b73",
+    paper: "#fffdf8",
+    ground: "#efe9df",
+    baseTop: "#c7b9a5",
+    baseLeft: "#8d7f6d",
+    baseRight: "#a99a86",
+    frameTop: "#e7dfd2",
+    frameLeft: "#a99a86",
+    frameRight: "#c3b5a1",
+    steelTop: "#d7dee5",
+    steelLeft: "#7c8a95",
+    steelRight: "#a8b4bd",
+    darkTop: "#9aa5ad",
+    darkLeft: "#4f5d66",
+    darkRight: "#74828c",
+    control: "#38bdf8",
+    controlDark: "#0369a1",
+    treated: "#fb7185",
+    treatedDark: "#be123c",
+    sig: "#f59e0b",
+    sigDark: "#b45309",
+    glass: "rgba(226,232,240,.55)",
+    glow: "#fde68a"
+  };
+
+  const ISO = { c: Math.cos(Math.PI / 6), s: Math.sin(Math.PI / 6) };
+  const O = { x: 560, y: 540 };
+
+  const f = n => Number(n).toFixed(2);
+  const p = (x, y, z = 0) => [
+    O.x + (x - y) * ISO.c,
+    O.y + (x + y) * ISO.s - z
+  ];
+  const pts = arr => arr.map(([x, y]) => `${f(x)},${f(y)}`).join(" ");
+
+  function poly(arr, fill, stroke = C.ink, sw = 0.8, opacity = 1) {
+    return `<polygon points="${pts(arr)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${opacity}" stroke-linejoin="round"/>`;
+  }
+  function line(a, b, stroke = C.ink, sw = 1, dash = "", opacity = 1) {
+    return `<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="${stroke}" stroke-width="${sw}"${dash ? ` stroke-dasharray="${dash}"` : ""} opacity="${opacity}" stroke-linecap="round"/>`;
+  }
+  function circle(cx, cy, r, fill, stroke = C.ink, sw = 0.8, opacity = 1) {
+    return `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${opacity}"/>`;
+  }
+  function text(x, y, str, size = 11, fill = C.ink, anchor = "middle", weight = 600) {
+    return `<text x="${f(x)}" y="${f(y)}" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}">${str}</text>`;
+  }
+
+  function box(x, y, z, w, d, h, top, left, right, stroke = C.ink, sw = 0.8) {
+    const A = p(x, y, z), B = p(x + w, y, z), Cc = p(x + w, y + d, z), D = p(x, y + d, z);
+    const At = p(x, y, z + h), Bt = p(x + w, y, z + h), Ct = p(x + w, y + d, z + h), Dt = p(x, y + d, z + h);
+    return [
+      poly([D, Cc, Ct, Dt], left, stroke, sw),
+      poly([B, Cc, Ct, Bt], right, stroke, sw),
+      poly([At, Bt, Ct, Dt], top, stroke, sw)
+    ].join("");
+  }
+
+  function cylinder(cx, cy, z, r, h, topFill, sideFill, stroke = C.ink, sw = 0.8, opacity = 1) {
+    const T = p(cx, cy, z + h), B = p(cx, cy, z);
+    const rx = r, ry = r * 0.48;
+    const side = `<path d="M ${f(T[0] - rx)} ${f(T[1])} L ${f(B[0] - rx)} ${f(B[1])} A ${f(rx)} ${f(ry)} 0 0 0 ${f(B[0] + rx)} ${f(B[1])} L ${f(T[0] + rx)} ${f(T[1])} A ${f(rx)} ${f(ry)} 0 0 1 ${f(T[0] - rx)} ${f(T[1])} Z" fill="${sideFill}" stroke="${stroke}" stroke-width="${sw}" opacity="${opacity}"/>`;
+    const top = `<ellipse cx="${f(T[0])}" cy="${f(T[1])}" rx="${f(rx)}" ry="${f(ry)}" fill="${topFill}" stroke="${stroke}" stroke-width="${sw}" opacity="${opacity}"/>`;
+    return side + top;
+  }
+
+  function screw(x, y, z, r = 2.2) {
+    const q = p(x, y, z);
+    return circle(q[0], q[1], r, C.darkTop, C.ink, 0.5) + circle(q[0], q[1], r * 0.42, C.ink, C.ink, 0);
+  }
+
+  function plate(x, y, z, w, d, label, size = 9) {
+    const c = p(x + w / 2, y + d / 2, z + 4);
+    return box(x, y, z, w, d, 3, C.frameTop, C.frameLeft, C.frameRight) +
+      text(c[0], c[1] + 3, label, size, C.ink);
+  }
+
+  function arc(cx, cy, r, a0, a1) {
+    const rad = d => d * Math.PI / 180;
+    const x0 = cx + Math.cos(rad(a0)) * r, y0 = cy + Math.sin(rad(a0)) * r;
+    const x1 = cx + Math.cos(rad(a1)) * r, y1 = cy + Math.sin(rad(a1)) * r;
+    const large = Math.abs(a1 - a0) > 180 ? 1 : 0;
+    return `M ${f(x0)} ${f(y0)} A ${f(r)} ${f(r)} 0 ${large} 1 ${f(x1)} ${f(y1)}`;
+  }
+
+  function tube(x, y, z, liquidTop, liquidSide) {
+    let s = cylinder(x, y, z, 9, 38, "#f8fafc", C.glass);
+    s += cylinder(x, y, z + 4, 7, 20, liquidTop, liquidSide, C.ink, 0.6, 0.92);
+    s += cylinder(x, y, z + 38, 10, 5, "#e2e8f0", "#94a3b8");
+    s += line(p(x - 5, y, z + 11), p(x - 5, y, z + 33), "rgba(255,255,255,.8)", 2);
+    return s;
+  }
+
+  function sceneBase() {
+    let s = `<ellipse cx="${O.x + 150}" cy="${O.y + 290}" rx="300" ry="45" fill="#000" opacity=".07"/>`;
+    for (const [x, y] of [[32, 36], [488, 36], [32, 164], [488, 164]]) {
+      s += box(x - 9, y - 9, -9, 18, 18, 11, C.darkTop, C.darkLeft, C.darkRight);
+    }
+    s += box(20, 18, 0, 500, 170, 10, C.baseTop, C.baseLeft, C.baseRight);
+    s += box(26, 24, 10, 488, 158, 2, "#d8cbb8", "#a99a86", "#c3b5a1");
+    for (let x = 28; x <= 512; x += 8) {
+      const len = x % 40 === 0 ? 8 : 4;
+      s += line(p(x, 188, 10), p(x, 188, 10 + len), x % 40 === 0 ? C.soft : "#8d7f6d", 1);
+    }
+    for (const [x, y] of [[28, 30], [512, 30], [28, 176], [512, 176]]) s += screw(x, y, 12);
+    s += plate(40, 190, 14, 130, 12, "COUNT → BIOLOGY", 9);
+    return s;
+  }
+
+  function sceneCounts() {
+    const x = 142, y = 32, z = 78, w = 7, d = 94, h = 80;
+    let s = box(x, y, z, w, d, h, C.frameTop, C.frameLeft, C.frameRight);
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 6; c++) {
+        const yy = y + 8 + c * 14;
+        const zz = z + 8 + r * 17;
+        const hot = (r + c) % 7 === 0;
+        const top = hot ? C.sig : (c < 3 ? "#7dd3fc" : "#fda4af");
+        const left = hot ? C.sigDark : (c < 3 ? C.controlDark : C.treatedDark);
+        const right = hot ? "#fbbf24" : (c < 3 ? C.control : C.treated);
+        s += box(x + w + 1, yy, zz, 2, 10, 12, top, left, right, C.ink, 0.6);
+      }
+    }
+    s += box(x - 2, y - 2, z + h, w + 4, d + 4, 6, "#475569", "#334155", "#64748b");
+    const hc = p(x + 35, y + d / 2, z + h + 8);
+    s += text(hc[0], hc[1], "COUNTS 6×40", 10, "#ffffff");
+    for (const [sx, sy] of [[x + 2, y + 2], [x + w - 2, y + 2], [x + 2, y + d - 2], [x + w - 2, y + d - 2]]) {
+      s += screw(sx, sy, z + h + 1, 1.6);
+    }
+    return s;
+  }
+
+  function sceneSamples() {
+    let s = box(42, 52, 10, 72, 84, 7, "#b9ab97", "#7f7261", "#9c8e7a");
+    s += box(42, 52, 17, 6, 84, 8, C.steelTop, C.steelLeft, C.steelRight);
+    s += box(108, 52, 17, 6, 84, 8, C.steelTop, C.steelLeft, C.steelRight);
+    s += box(42, 52, 17, 72, 5, 6, C.steelTop, C.steelLeft, C.steelRight);
+
+    const tubes = [];
+    for (const x of [58, 94]) for (const y of [66, 92, 118]) tubes.push({ x, y, trt: x > 80 });
+    tubes.sort((a, b) => (a.x + a.y) - (b.x + b.y));
+    for (const t of tubes) {
+      s += tube(t.x, t.y, 26, t.trt ? "#fecdd3" : "#bae6fd", t.trt ? C.treatedDark : C.controlDark);
+      s += box(t.x - 8, t.y - 8, 17, 16, 4, 3, "#94a3b8", "#4f5d66", "#74828c");
+    }
+    s += plate(48, 138, 17, 58, 12, "6 SAMPLES", 9);
+    return s;
+  }
+
+  function sceneReader() {
+    let s = box(120, 48, 10, 7, 7, 68, C.steelTop, C.steelLeft, C.steelRight);
+    s += box(120, 132, 10, 7, 7, 68, C.steelTop, C.steelLeft, C.steelRight);
+    s += box(120, 48, 76, 7, 91, 7, C.steelTop, C.steelLeft, C.steelRight);
+    for (let y = 55; y <= 135; y += 8) {
+      s += line(p(128, y, 83), p(128, y, 86), y % 40 === 0 ? C.soft : "#8d7f6d", 1);
+    }
+    let c = box(112, 62, 70, 23, 15, 13, "#e2e8f0", "#64748b", "#94a3b8");
+    c += cylinder(123, 69, 83, 4, 3, "#cbd5e1", "#64748b");
+    c += box(122, 68, 45, 4, 4, 25, "#cbd5e1", "#64748b", "#94a3b8");
+    const tip = p(124, 70, 45);
+    c += `<circle cx="${f(tip[0])}" cy="${f(tip[1])}" r="12" fill="${C.glow}" opacity=".22"/>`;
+    c += circle(tip[0], tip[1], 4, C.glow, C.sigDark, 0.8);
+    s += `<g id="carriage">${c}</g>`;
+    s += `<path id="cable" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" d=""/>`;
+    s += plate(118, 140, 18, 46, 11, "READ", 8);
+    return s;
+  }
+
+  function sceneComparator() {
+    let s = box(186, 82, 10, 92, 46, 9, "#b9ab97", "#7f7261", "#9c8e7a");
+    s += box(226, 102, 19, 7, 7, 38, C.steelTop, C.steelLeft, C.steelRight);
+    const left = p(198, 105, 52), right = p(258, 105, 44), pivot = p(228, 105, 48);
+    s += `<line x1="${f(left[0])}" y1="${f(left[1])}" x2="${f(right[0])}" y2="${f(right[1])}" stroke="#475569" stroke-width="6" stroke-linecap="round"/>`;
+    s += `<line x1="${f(left[0])}" y1="${f(left[1])}" x2="${f(right[0])}" y2="${f(right[1])}" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>`;
+    s += circle(pivot[0], pivot[1], 4, "#fbbf24", "#92400e", 0.8);
+    s += line(left, p(198, 105, 30), "#64748b", 1.2, "2 3");
+    s += line(right, p(258, 105, 32), "#64748b", 1.2, "2 3");
+    s += cylinder(198, 105, 26, 11, 4, "#bae6fd", C.controlDark);
+    s += cylinder(258, 105, 28, 11, 4, "#fecdd3", C.treatedDark);
+    s += box(194, 101, 30, 8, 8, 5, "#7dd3fc", C.controlDark, C.control);
+    s += box(254, 101, 32, 8, 8, 5, "#fda4af", C.treatedDark, C.treated);
+
+    const s0 = p(258, 105, 26), s1 = p(258, 105, 12);
+    let d = `M ${f(s0[0])} ${f(s0[1])}`;
+    for (let i = 1; i <= 6; i++) {
+      const y = s0[1] + (s1[1] - s0[1]) * i / 7;
+      const x = s0[0] + (i % 2 ? 5 : -5);
+      d += ` L ${f(x)} ${f(y)}`;
+    }
+    d += ` L ${f(s1[0])} ${f(s1[1])}`;
+    s += `<path d="${d}" fill="none" stroke="#64748b" stroke-width="1.2"/>`;
+    s += plate(196, 132, 12, 70, 12, "COMPARE", 9);
+    return s;
+  }
+
+  let gaugeCenter = [0, 0];
+
+  function sceneDial() {
+    let s = box(286, 66, 10, 34, 34, 7, "#b9ab97", "#7f7261", "#9c8e7a");
+    s += box(296, 76, 17, 7, 7, 50, C.steelTop, C.steelLeft, C.steelRight);
+    s += box(292, 86, 64, 20, 6, 6, C.steelTop, C.steelLeft, C.steelRight);
+
+    const g = p(306, 92, 96);
+    gaugeCenter = g;
+    s += circle(g[0], g[1], 41, "#475569", "#1f2937", 1);
+    s += circle(g[0], g[1], 34, C.paper, "#475569", 1);
+    for (let i = 0; i < 13; i++) {
+      const a = (-120 + i * 20) * Math.PI / 180;
+      const r1 = i % 3 === 0 ? 26 : 29;
+      const x1 = g[0] + Math.cos(a) * r1, y1 = g[1] + Math.sin(a) * r1;
+      const x2 = g[0] + Math.cos(a) * 33, y2 = g[1] + Math.sin(a) * 33;
+      s += line([x1, y1], [x2, y2], i % 3 === 0 ? C.ink : C.soft, i % 3 === 0 ? 1.5 : 0.8);
+    }
+    s += `<path d="${arc(g[0], g[1], 30, -120, -72)}" fill="none" stroke="${C.sig}" stroke-width="5" opacity=".8"/>`;
+    s += `<g id="needle" transform="rotate(-72 ${f(g[0])} ${f(g[1])})">` +
+      `<line x1="${f(g[0])}" y1="${f(g[1])}" x2="${f(g[0])}" y2="${f(g[1] - 28)}" stroke="${C.sigDark}" stroke-width="3" stroke-linecap="round"/>` +
+      `<line x1="${f(g[0])}" y1="${f(g[1])}" x2="${f(g[0])}" y2="${f(g[1] + 8)}" stroke="${C.sigDark}" stroke-width="2" stroke-linecap="round"/>` +
+      `</g>`;
+    s += circle(g[0], g[1], 3.2, C.ink);
+    s += text(g[0], g[1] + 18, "8 / 40", 10, C.ink);
+    s += text(g[0], g[1] + 30, "FDR &lt; .05", 8, C.soft);
+    return s;
+  }
+
+  function sceneSieve() {
+    let s = `<g>`;
+    s += cylinder(330, 70, 44, 10, 30, "rgba(226,232,240,.45)", "rgba(226,232,240,.30)");
+    for (let i = 0; i < 8; i++) {
+      const q = p(330, 70, 48 + i * 3.1);
+      s += circle(q[0], q[1], 3, C.sig, C.sigDark, 0.6);
+    }
+    s += box(318, 58, 40, 26, 24, 4, "#cbd5e1", "#64748b", "#94a3b8");
+    s += box(344, 70, 38, 6, 6, 8, C.sig, C.sigDark, "#fbbf24");
+    s += box(312, 58, 12, 44, 38, 6, "#b9ab97", "#7f7261", "#9c8e7a");
+    s += box(316, 62, 18, 36, 30, 3, C.frameTop, C.frameLeft, C.frameRight);
+    s += poly([p(326, 64, 42), p(334, 64, 42), p(340, 64, 20), p(320, 64, 20)], "#cbd5e1", C.ink, 0.8, 0.55);
+    s += plate(306, 102, 12, 46, 12, "FDR GATE", 8);
+    s += `</g>`;
+    s += `<g id="beads">`;
+    for (let i = 0; i < 8; i++) s += `<circle id="bead-${i}" r="3.2" fill="${C.sig}" stroke="${C.sigDark}" stroke-width="0.5" opacity="1"/>`;
+    s += `</g>`;
+    const dx = (-5 - 40) * ISO.c;
+    const dy = (-5 + 40) * ISO.s;
+    return `<g transform="translate(${f(dx)},${f(dy)})">${s}</g>`;
+  }
+
+  function scenePlotter() {
+    let s = "";
+    s += poly([p(352, 54, 12), p(438, 54, 12), p(438, 138, 12), p(352, 138, 12)], C.paper, "#c9bfae", 1.2, 1);
+    for (let x = 360; x <= 430; x += 10) s += line(p(x, 58, 13), p(x, 134, 13), "#e7dfd2", 0.5);
+    for (let y = 60; y <= 130; y += 10) s += line(p(356, y, 13), p(434, y, 13), "#e7dfd2", 0.5);
+    s += line(p(360, 130, 14), p(430, 130, 14), "#475569", 1.2);
+    s += line(p(360, 130, 14), p(360, 60, 14), "#475569", 1.2);
+    s += line(p(360, 98, 14), p(430, 98, 14), C.sig, 0.8, "3 3");
+
+    let seed = 7;
+    const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    for (let i = 0; i < 40; i++) {
+      const sig = i < 8;
+      const fc = (rand() * 2 - 1) * (sig ? 2.0 : 2.4);
+      const yv = sig ? 2.2 + rand() * 1.6 : rand() * 2.2;
+      const px = Math.max(362, Math.min(428, 394 + fc * 11));
+      const py = Math.max(62, Math.min(128, 128 - yv * 17));
+      const q = p(px, py, 15);
+      s += circle(q[0], q[1], sig ? 3.2 : 2.4, sig ? C.sig : "#94a3b8", sig ? C.sigDark : "#64748b", 0.5, sig ? 1 : 0.75);
+    }
+    s += text(p(396, 136, 15)[0], p(396, 136, 15)[1], "log2FC", 8, C.soft);
+    s += text(p(354, 70, 15)[0], p(354, 70, 15)[1], "-log10 p", 8, C.soft, "start");
+
+    s += box(346, 90, 12, 6, 6, 64, C.steelTop, C.steelLeft, C.steelRight);
+    s += box(438, 90, 12, 6, 6, 64, C.steelTop, C.steelLeft, C.steelRight);
+    s += box(346, 90, 70, 98, 6, 6, C.steelTop, C.steelLeft, C.steelRight);
+    let pen = box(370, 90, 68, 10, 8, 8, "#e2e8f0", "#64748b", "#94a3b8");
+    pen += box(373, 93, 60, 4, 4, 10, "#cbd5e1", "#64748b", "#94a3b8");
+    pen += circle(p(375, 95, 59)[0], p(375, 95, 59)[1], 2, C.sig, C.sigDark, 0.5);
+    s += `<g id="pen">${pen}</g>`;
+    s += `<path id="pen-cable" fill="none" stroke="#475569" stroke-width="1.6" stroke-linecap="round" d=""/>`;
+    s += plate(352, 142, 12, 64, 12, "VOLCANO", 9);
+    return `<g transform="translate(${f(8 * ISO.c)},${f(8 * ISO.s)})">${s}</g>`;
+  }
+
+  function sceneBiology() {
+    let s = box(458, 70, 10, 56, 54, 8, "#b9ab97", "#7f7261", "#9c8e7a");
+    s += box(462, 74, 18, 48, 46, 2, C.frameTop, C.frameLeft, C.frameRight);
+    const cards = [["GO", C.control], ["KEGG", C.sig], ["HYP", C.treated]];
+    cards.forEach(([label, color], i) => {
+      const x = 466 + i * 15, y = 78;
+      s += box(x, y, 20, 3, 34, 28, "#e2e8f0", "#94a3b8", "#cbd5e1");
+      s += box(x + 3, y + 4, 26, 1, 12, 13, color, color, color, C.ink, 0.4);
+      const q = p(x + 2, y + 17, 46);
+      s += text(q[0], q[1], label, 7, C.ink);
+    });
+    s += box(462, 64, 18, 4, 4, 34, C.steelTop, C.steelLeft, C.steelRight);
+    s += plate(450, 56, 52, 64, 12, "BIOLOGY", 9);
+    for (let x = 412; x <= 454; x += 10) s += cylinder(x, 80, 14, 4, 4, "#cbd5e1", "#64748b");
+    return s;
+  }
+
+  const scene = [
+    sceneBase(),
+    sceneCounts(),
+    sceneSamples(),
+    sceneReader(),
+    sceneComparator(),
+    sceneDial(),
+    sceneSieve(),
+    scenePlotter(),
+    sceneBiology()
+  ].join("");
+
+  svg.innerHTML += scene;
+
+  const carriage = document.getElementById("carriage");
+  const cable = document.getElementById("cable");
+  const needle = document.getElementById("needle");
+  const pen = document.getElementById("pen");
+  const penCable = document.getElementById("pen-cable");
+  const beads = Array.from({ length: 8 }, (_, i) => document.getElementById(`bead-${i}`));
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let visible = true;
+  let raf = null;
+
+  function drawCable(start, end, bend = 40) {
+    return `M ${f(start[0])} ${f(start[1])} Q ${f((start[0] + end[0]) / 2)} ${f(Math.min(start[1], end[1]) - bend)} ${f(end[0])} ${f(end[1])}`;
+  }
+
+  function frame(t) {
+    const time = t / 1000;
+    const dyWorld = 18 * Math.sin(time * 0.9);
+    const dScreen = [ -dyWorld * ISO.c, dyWorld * ISO.s ];
+    carriage.setAttribute("transform", `translate(${f(dScreen[0])},${f(dScreen[1])})`);
+    cable.setAttribute("d", drawCable(p(106, 142, 20), p(124, 70 + dyWorld, 84), 46));
+
+    const angle = -72 + 2 * Math.sin(time * 1.3);
+    needle.setAttribute("transform", `rotate(${f(angle)} ${f(gaugeCenter[0])} ${f(gaugeCenter[1])})`);
+
+    const penX = 370 + 45 * (0.5 + 0.5 * Math.sin(time * 0.7));
+    const a = p(penX, 95, 70), b = p(370, 95, 70);
+    pen.setAttribute("transform", `translate(${f(a[0] - b[0])},${f(a[1] - b[1])})`);
+    penCable.setAttribute("d", drawCable(p(446, 94, 76), p(penX, 95, 78), 18));
+
+    const start = p(330, 70, 42), end = p(330, 70, 18);
+    beads.forEach((bead, i) => {
+      const phase = ((time * 0.55 + i * 0.11) % 1);
+      const e = phase * phase;
+      const x = start[0] + (end[0] - start[0]) * phase;
+      const y = start[1] + (end[1] - start[1]) * e + 10 * Math.sin(Math.PI * phase);
+      bead.setAttribute("cx", f(x));
+      bead.setAttribute("cy", f(y));
+      bead.setAttribute("opacity", phase > 0.9 ? f((1 - phase) * 10) : "1");
+    });
+
+    if (visible && !reduceMotion) raf = requestAnimationFrame(frame);
+  }
+
+  if (reduceMotion) {
+    frame(0);
+  } else {
+    frame(0);
+    const card = document.querySelector(".figure-card");
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver(entries => {
+        visible = entries[0].isIntersecting;
+        if (visible && raf === null) raf = requestAnimationFrame(frame);
+        if (!visible && raf !== null) { cancelAnimationFrame(raf); raf = null; }
+      }, { threshold: 0.05 });
+      io.observe(card);
+    }
+  }
+})();
+</script>
+</body>
+</html>

@@ -182,6 +182,12 @@ assets/badges/  自绘像素徽章
 docs/           设计文档与学习笔记
 ```
 
+## 🖼️ 概念图
+
+[![RNA-seq: from count to biology](docs/figures/rnaseq-count-to-biology/preview.png)](docs/figures/rnaseq-count-to-biology/README.md)
+
+一台等距“测试台”：6 个样本 → count matrix → 比较 → FDR 闸门 → 火山图 → 生物学解释。点图查看说明和可交互 HTML。
+
 ## 📚 图书馆（外部资源）
 
 - [BodyParts3D](resources/bodyparts3d/README.md)：人体解剖 3D 模型（约 930 MB），按需下载，不直接 vendoring。
