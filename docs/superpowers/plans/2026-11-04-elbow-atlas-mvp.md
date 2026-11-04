@@ -726,13 +726,13 @@ git commit -m "feat: download bodyparts3d and resolve part ids"
 
 - [ ] **Step 1: 创建结构清单**
 
-Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mjs` 输出中的 `en` 完全一致；先运行解析器确认，再填。
+Create `data-src/structures.yaml`。`lookups` 中每个英文名必须与 `scripts/resolve-parts.mjs` 输出中的 `en` 完全一致；先运行解析器确认，再填。4.0 只有“头”级肌肉条目，所以二头肌/三头肌/旋前圆肌用多个 lookups 合并。
 
 ```yaml
 - slug: humerus_right
-  lookup: Humerus
+  lookups: [right humerus]
   fmaId: ""
-  names: { zh: 肱骨, en: Humerus, la: Humerus }
+  names: { zh: 肱骨, en: Right humerus, la: Humerus }
   system: skeletal
   laterality: right
   selectable: true
@@ -741,9 +741,9 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   clinical: 肱骨干骨折可损伤桡神经。
 
 - slug: radius_right
-  lookup: Radius
+  lookups: [right radius]
   fmaId: ""
-  names: { zh: 桡骨, en: Radius, la: Radius }
+  names: { zh: 桡骨, en: Right radius, la: Radius }
   system: skeletal
   laterality: right
   selectable: true
@@ -752,9 +752,9 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   clinical: 桡骨远端骨折常见，注意桡动脉与正中神经。
 
 - slug: ulna_right
-  lookup: Ulna
+  lookups: [right ulna]
   fmaId: ""
-  names: { zh: 尺骨, en: Ulna, la: Ulna }
+  names: { zh: 尺骨, en: Right ulna, la: Ulna }
   system: skeletal
   laterality: right
   selectable: true
@@ -763,9 +763,9 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   clinical: 尺骨鹰嘴是肱三头肌止点。
 
 - slug: scapula_right
-  lookup: Scapula
+  lookups: [right scapula]
   fmaId: ""
-  names: { zh: 肩胛骨, en: Scapula, la: Scapula }
+  names: { zh: 肩胛骨, en: Right scapula, la: Scapula }
   system: skeletal
   laterality: right
   selectable: false
@@ -773,21 +773,10 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   neighbors: [humerus_right]
   clinical: 肩胛骨为二头肌长头与三头肌长头提供起点。
 
-- slug: hand_right
-  lookup: Hand
-  fmaId: ""
-  names: { zh: 手, en: Hand, la: Manus }
-  system: skeletal
-  laterality: right
-  selectable: false
-  contextOnly: true
-  neighbors: [radius_right, ulna_right]
-  clinical: 手部随桡骨旋转，用于观察旋前/旋后。
-
 - slug: biceps_brachii_right
-  lookup: Biceps brachii
+  lookups: [long head of right biceps brachii, short head of right biceps brachii]
   fmaId: ""
-  names: { zh: 肱二头肌, en: Biceps brachii, la: Musculus biceps brachii }
+  names: { zh: 肱二头肌, en: Right biceps brachii, la: Musculus biceps brachii }
   system: muscular
   laterality: right
   selectable: true
@@ -796,9 +785,9 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   clinical: 远端肱二头肌腱断裂会导致屈肘与旋后无力。
 
 - slug: brachialis_right
-  lookup: Brachialis
+  lookups: [right brachialis]
   fmaId: ""
-  names: { zh: 肱肌, en: Brachialis, la: Musculus brachialis }
+  names: { zh: 肱肌, en: Right brachialis, la: Musculus brachialis }
   system: muscular
   laterality: right
   selectable: true
@@ -807,9 +796,9 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   clinical: 肱肌是主要的屈肘肌，位于肱二头肌深面。
 
 - slug: triceps_brachii_right
-  lookup: Triceps brachii
+  lookups: [long head of right triceps brachii, lateral head of right triceps brachii, medial head of right triceps brachii]
   fmaId: ""
-  names: { zh: 肱三头肌, en: Triceps brachii, la: Musculus triceps brachii }
+  names: { zh: 肱三头肌, en: Right triceps brachii, la: Musculus triceps brachii }
   system: muscular
   laterality: right
   selectable: true
@@ -818,9 +807,9 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   clinical: 肱三头肌长头跨肩，肩位会影响其长度。
 
 - slug: brachioradialis_right
-  lookup: Brachioradialis
+  lookups: [right brachioradialis]
   fmaId: ""
-  names: { zh: 肱桡肌, en: Brachioradialis, la: Musculus brachioradialis }
+  names: { zh: 肱桡肌, en: Right brachioradialis, la: Musculus brachioradialis }
   system: muscular
   laterality: right
   selectable: true
@@ -829,20 +818,20 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   clinical: 肱桡肌在旋前/旋后中立位屈肘最有力。
 
 - slug: pronator_teres_right
-  lookup: Pronator teres
+  lookups: [humeral head of right pronator teres, ulnar head of right pronator teres]
   fmaId: ""
-  names: { zh: 旋前圆肌, en: Pronator teres, la: Musculus pronator teres }
+  names: { zh: 旋前圆肌, en: Right pronator teres, la: Musculus pronator teres }
   system: muscular
   laterality: right
   selectable: true
   contextOnly: false
-  neighbors: [humerus_right, radius_right, median_nerve_right]
-  clinical: 旋前圆肌综合征可压迫正中神经。
+  neighbors: [humerus_right, radius_right]
+  clinical: 旋前圆肌可压迫正中神经。
 
 - slug: pronator_quadratus_right
-  lookup: Pronator quadratus
+  lookups: [right pronator quadratus]
   fmaId: ""
-  names: { zh: 旋前方肌, en: Pronator quadratus, la: Musculus pronator quadratus }
+  names: { zh: 旋前方肌, en: Right pronator quadratus, la: Musculus pronator quadratus }
   system: muscular
   laterality: right
   selectable: true
@@ -851,9 +840,9 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   clinical: 旋前方肌是主要的旋前肌之一。
 
 - slug: supinator_right
-  lookup: Supinator
+  lookups: [right supinator]
   fmaId: ""
-  names: { zh: 旋后肌, en: Supinator, la: Musculus supinator }
+  names: { zh: 旋后肌, en: Right supinator, la: Musculus supinator }
   system: muscular
   laterality: right
   selectable: true
@@ -861,65 +850,21 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   neighbors: [humerus_right, radius_right, ulna_right]
   clinical: 旋后肌由桡神经深支支配。
 
-- slug: median_nerve_right
-  lookup: Median nerve
-  fmaId: ""
-  names: { zh: 正中神经, en: Median nerve, la: Nervus medianus }
-  system: nervous
-  laterality: right
-  selectable: true
-  contextOnly: false
-  neighbors: [brachial_artery_right, pronator_teres_right]
-  clinical: 髁上骨折可损伤正中神经。
-
-- slug: ulnar_nerve_right
-  lookup: Ulnar nerve
-  fmaId: ""
-  names: { zh: 尺神经, en: Ulnar nerve, la: Nervus ulnaris }
-  system: nervous
-  laterality: right
-  selectable: true
-  contextOnly: false
-  neighbors: [humerus_right, ulna_right]
-  clinical: 肘管综合征压迫尺神经。
-
-- slug: radial_nerve_right
-  lookup: Radial nerve
-  fmaId: ""
-  names: { zh: 桡神经, en: Radial nerve, la: Nervus radialis }
-  system: nervous
-  laterality: right
-  selectable: true
-  contextOnly: false
-  neighbors: [humerus_right, radius_right]
-  clinical: 肱骨干骨折可损伤桡神经，导致垂腕。
-
-- slug: musculocutaneous_nerve_right
-  lookup: Musculocutaneous nerve
-  fmaId: ""
-  names: { zh: 肌皮神经, en: Musculocutaneous nerve, la: Nervus musculocutaneus }
-  system: nervous
-  laterality: right
-  selectable: true
-  contextOnly: false
-  neighbors: [biceps_brachii_right, brachialis_right]
-  clinical: 肌皮神经支配肱二头肌与肱肌。
-
 - slug: brachial_artery_right
-  lookup: Brachial artery
+  lookups: [right brachial artery]
   fmaId: ""
-  names: { zh: 肱动脉, en: Brachial artery, la: Arteria brachialis }
+  names: { zh: 肱动脉, en: Right brachial artery, la: Arteria brachialis }
   system: vascular
   laterality: right
   selectable: true
   contextOnly: false
-  neighbors: [median_nerve_right, humerus_right]
+  neighbors: [humerus_right]
   clinical: 髁上骨折可损伤肱动脉。
 
 - slug: radial_artery_right
-  lookup: Radial artery
+  lookups: [right radial artery]
   fmaId: ""
-  names: { zh: 桡动脉, en: Radial artery, la: Arteria radialis }
+  names: { zh: 桡动脉, en: Right radial artery, la: Arteria radialis }
   system: vascular
   laterality: right
   selectable: true
@@ -928,81 +873,15 @@ Create `data-src/structures.yaml`。`lookup` 必须与 `scripts/resolve-parts.mj
   clinical: 桡动脉是常用的触诊与穿刺血管。
 
 - slug: ulnar_artery_right
-  lookup: Ulnar artery
+  lookups: [right ulnar artery]
   fmaId: ""
-  names: { zh: 尺动脉, en: Ulnar artery, la: Arteria ulnaris }
+  names: { zh: 尺动脉, en: Right ulnar artery, la: Arteria ulnaris }
   system: vascular
   laterality: right
   selectable: true
   contextOnly: false
   neighbors: [ulna_right]
   clinical: 尺动脉参与掌浅弓。
-
-- slug: ulnar_collateral_ligament_right
-  lookup: Ulnar collateral ligament
-  fmaId: ""
-  names: { zh: 尺侧副韧带, en: Ulnar collateral ligament, la: Ligamentum collaterale ulnare }
-  system: ligament
-  laterality: right
-  selectable: true
-  contextOnly: false
-  neighbors: [humerus_right, ulna_right]
-  clinical: 尺侧副韧带损伤常见于投掷运动员。
-
-- slug: radial_collateral_ligament_right
-  lookup: Radial collateral ligament
-  fmaId: ""
-  names: { zh: 桡侧副韧带, en: Radial collateral ligament, la: Ligamentum collaterale radiale }
-  system: ligament
-  laterality: right
-  selectable: true
-  contextOnly: false
-  neighbors: [humerus_right, radius_right]
-  clinical: 桡侧副韧带参与肘外侧稳定。
-
-- slug: annular_ligament_right
-  lookup: Annular ligament
-  fmaId: ""
-  names: { zh: 环状韧带, en: Annular ligament, la: Ligamentum annulare radii }
-  system: ligament
-  laterality: right
-  selectable: true
-  contextOnly: false
-  neighbors: [radius_right, ulna_right]
-  clinical: 环状韧带固定桡骨头，允许其旋转。
-
-- slug: interosseous_membrane_right
-  lookup: Interosseous membrane
-  fmaId: ""
-  names: { zh: 骨间膜, en: Interosseous membrane, la: Membrana interossea }
-  system: ligament
-  laterality: right
-  selectable: true
-  contextOnly: false
-  neighbors: [radius_right, ulna_right]
-  clinical: 骨间膜传递负荷并分隔前臂伸屈肌群。
-
-- slug: skin_upper_arm_right
-  lookup: Skin of upper arm
-  fmaId: ""
-  names: { zh: 上臂皮肤, en: Skin of upper arm, la: Cutis brachii }
-  system: skin
-  laterality: right
-  selectable: false
-  contextOnly: false
-  neighbors: [humerus_right, biceps_brachii_right, triceps_brachii_right]
-  clinical: 皮肤是体表定位的第一层。
-
-- slug: skin_forearm_right
-  lookup: Skin of forearm
-  fmaId: ""
-  names: { zh: 前臂皮肤, en: Skin of forearm, la: Cutis antebrachii }
-  system: skin
-  laterality: right
-  selectable: false
-  contextOnly: false
-  neighbors: [radius_right, ulna_right]
-  clinical: 前臂皮肤感觉受多条神经支配。
 ```
 
 - [ ] **Step 2: 创建剖面平面数据**
@@ -1066,23 +945,36 @@ def read_element_parts(path: Path):
 
 
 def resolve_element_ids(entry, parts, element_parts, obj_by_stem):
-    lookup = entry["lookup"].lower()
-    if lookup not in parts:
-        close = [name for name in parts if lookup in name][:10]
-        raise SystemExit(
-            f"{entry['slug']}: lookup '{entry['lookup']}' not found. Close matches: {close}"
-        )
-    concept_id, rep_id = parts[lookup]
-    element_ids = element_parts.get(concept_id, [rep_id])
+    concept_ids = []
+    element_ids = []
     paths = []
-    for element_id in element_ids:
-        matches = [p for stem, p in obj_by_stem.items() if element_id in stem]
-        if len(matches) != 1:
+    for lookup in entry["lookups"]:
+        key = lookup.lower()
+        if key not in parts:
+            close = [name for name in parts if key in name][:10]
             raise SystemExit(
-                f"{entry['slug']}: element {element_id} matched {len(matches)} OBJ files"
+                f"{entry['slug']}: lookup '{lookup}' not found. Close matches: {close}"
             )
-        paths.append(matches[0])
-    return concept_id, element_ids, paths
+        concept_id, _rep_id = parts[key]
+        ids = element_parts.get(concept_id)
+        if not ids:
+            raise SystemExit(
+                f"{entry['slug']}: no element_parts entry for {concept_id} ({lookup})"
+            )
+        for element_id in ids:
+            matches = [p for stem, p in obj_by_stem.items() if stem == element_id]
+            if not matches:
+                matches = [
+                    p for stem, p in obj_by_stem.items() if stem == f"{element_id}M"
+                ]
+            if len(matches) != 1:
+                raise SystemExit(
+                    f"{entry['slug']}: element {element_id} matched {len(matches)} OBJ files"
+                )
+            concept_ids.append(concept_id)
+            element_ids.append(element_id)
+            paths.append(matches[0])
+    return concept_ids, element_ids, paths
 
 
 def load_and_merge(paths, slug):
@@ -1120,7 +1012,7 @@ def main():
     parts = read_parts(data_root / "isa_parts_list_e.txt")
     element_parts = read_element_parts(data_root / "isa_element_parts.txt")
     obj_dir = data_root / "obj"
-    obj_by_stem = {p.stem: p for p in obj_dir.glob("*.obj")}
+    obj_by_stem = {p.stem: p for p in obj_dir.rglob("*.obj")}
     if not obj_by_stem:
         raise SystemExit(f"No OBJ files in {obj_dir}; run npm run fetch:data first")
 
@@ -1132,7 +1024,7 @@ def main():
     for entry in structures:
         if args.only and entry["slug"] != args.only:
             continue
-        concept_id, element_ids, paths = resolve_element_ids(
+        concept_ids, element_ids, paths = resolve_element_ids(
             entry, parts, element_parts, obj_by_stem
         )
         mesh = load_and_merge(paths, entry["slug"])
@@ -1141,7 +1033,7 @@ def main():
         bounds = mesh.bounds
         stats[entry["slug"]] = {
             "slug": entry["slug"],
-            "fmaId": concept_id,
+            "fmaId": "+".join(dict.fromkeys(concept_ids)),
             "elementFileIds": element_ids,
             "centroid": [round(v, 6) for v in mesh.centroid.tolist()],
             "bbox": {
@@ -1207,7 +1099,7 @@ Run:
 python3 scripts/preprocess.py
 ```
 
-Expected: 每个结构一个 GLB；生成 `section-sagittal-a.glb`、`-b`、`section-coronal-a/b`、`section-axial-a/b`。若某个 structure 的 `lookup` 找不到，按错误提示的 close matches 修改 `data-src/structures.yaml` 后重跑。
+Expected: 每个结构一个 GLB；生成 `section-sagittal-a.glb`、`-b`、`section-coronal-a/b`、`section-axial-a/b`。若某个 structure 的 `lookups` 中某个名字找不到，按错误提示的 close matches 修改 `data-src/structures.yaml` 后重跑。
 
 - [ ] **Step 6: 提交**
 
@@ -1237,7 +1129,7 @@ describe('assembleStructures', () => {
     const yaml = [
       {
         slug: 'humerus_right',
-        lookup: 'Humerus',
+        lookups: ['Humerus'],
         fmaId: '',
         names: { zh: '肱骨', en: 'Humerus', la: 'Humerus' },
         system: 'skeletal' as const,
@@ -1271,7 +1163,7 @@ describe('assembleStructures', () => {
     const yaml = [
       {
         slug: 'x',
-        lookup: 'X',
+        lookups: ['X'],
         fmaId: '',
         names: { zh: 'x', en: 'X', la: 'X' },
         system: 'skeletal' as const,
@@ -1306,7 +1198,7 @@ import { structureSchema, type MeshStats, type StructureData } from './schema'
 
 export interface StructureYaml {
   slug: string
-  lookup: string
+  lookups: string[]
   fmaId: string
   names: { zh: string; en: string; la: string }
   system: StructureData['system']
@@ -1614,7 +1506,7 @@ Run:
 npm run build:data
 ```
 
-Expected: `src/data/generated/` 下生成 6 个 JSON；终端打印 `wrote 25 structures, 3 attachments`。
+Expected: `src/data/generated/` 下生成 6 个 JSON；终端打印 `wrote 14 structures, 3 attachments`。
 
 - [ ] **Step 8: 提交**
 
@@ -2159,27 +2051,14 @@ function Scene() {
         humerus,
         ulna,
         radius,
-        hand: bones.get('hand_right'),
         humerusExtras: pick(
           'scapula_right',
           'biceps_brachii_right',
           'brachialis_right',
           'triceps_brachii_right',
-          'median_nerve_right',
-          'radial_nerve_right',
-          'musculocutaneous_nerve_right',
           'brachial_artery_right',
-          'ulnar_collateral_ligament_right',
-          'radial_collateral_ligament_right',
-          'annular_ligament_right',
-          'skin_upper_arm_right',
         ),
-        forearmExtras: pick(
-          'ulnar_nerve_right',
-          'ulnar_artery_right',
-          'skin_forearm_right',
-          'interosseous_membrane_right',
-        ),
+        forearmExtras: pick('ulnar_artery_right'),
         radiusExtras: pick(
           'brachioradialis_right',
           'pronator_teres_right',
@@ -2867,10 +2746,7 @@ import { useViewerStore } from './store'
 const SYSTEMS: { id: System; label: string }[] = [
   { id: 'skeletal', label: '骨骼' },
   { id: 'muscular', label: '肌肉' },
-  { id: 'nervous', label: '神经' },
   { id: 'vascular', label: '血管' },
-  { id: 'ligament', label: '韧带/膜' },
-  { id: 'skin', label: '皮肤' },
 ]
 
 export function LayerPanel() {
@@ -2902,7 +2778,7 @@ export function LayerPanel() {
           />
         </label>
       ))}
-      <p className="hint">皮肤默认半透明；点选结构可查看信息卡。</p>
+      <p className="hint">MVP 只有骨骼/肌肉/血管三组网格；神经/皮肤为 phase 2。点选结构可查看信息卡。</p>
     </section>
   )
 }
@@ -3586,6 +3462,7 @@ git commit -m "test: add e2e smoke tests and deployment docs"
 - Section 模式下与 3D 选中联动的 “Find in section” 高亮；MVP 只做切面切换与 L4 文本题。试点后再加。
 - 真实肌腹形变；MVP 只显示路径长度、百分比与示意读数。
 - 肩/腕自由度、碰撞检测、软组织 FEM。
+- 外周神经、肘部韧带、区域皮肤、整只手的 3D 网格；MVP 只做骨骼/肌肉/血管三组，phase 2 再从 Z-Anatomy 补神经/皮肤。
 
 ## 完成标准
 
@@ -3593,4 +3470,5 @@ git commit -m "test: add e2e smoke tests and deployment docs"
 - `npm test` 与 `npm run e2e` 全绿。
 - 在真实设备上：屈曲与旋转都被 clamp；二头肌路径长度在固定肘角下按“旋前较长、旋后较短”变化；三标准面切面有封盖；点选、图层、测验、进度可用。
 - 所有页面明确显示“教学近似，非临床诊断；单一男性模型”。
+- MVP 只包含骨骼/肌肉/血管三组真实网格；神经/皮肤/韧带/手部为文字内容或 phase 2。
 
