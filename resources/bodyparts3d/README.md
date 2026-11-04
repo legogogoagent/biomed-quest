@@ -19,6 +19,24 @@
 - FMA ID 与英文解剖名的映射练习；
 - 未来做“解剖 + 组学”跨模态展示时的素材。
 
+## 相关项目怎么选
+
+| 项目 | 版本 / 格式 | 语言 | 体积 / 获取 | 适合 | 结论 |
+|---|---|---|---|---|---|
+| 本项目：`Kevin-Mattheus-Moerman/BodyParts3D` | 3.0 / STL | Julia + STL | 约 930 MB，sparse checkout | 在 R 里读几个 STL、快速可视化 | 当前保留 |
+| [`olivercase/body_parts_3d_api`](https://github.com/olivercase/body_parts_3d_api) | 4.3 / OBJ | Python | Git LFS，3,210 网格；可按子集取 | 要最新全分辨率，或只要心脏/肺/脑 | 收藏为数据源 |
+| [`ashemag/human-atlas`](https://github.com/ashemag/human-atlas) | 4.0 / Web | TypeScript | 约 104 MB，33 MB 几何 | 浏览器交互式解剖、UI/数据管线参考 | 收藏为参考 |
+| [`wspr/BodyParts3D-Matlab`](https://github.com/wspr/BodyParts3D-Matlab) | 4.0 / OBJ 99% | MATLAB | 326 KB + 136 MB 数据 | MATLAB 用户 | 本项目不收录 |
+
+**选择建议**：
+
+- 只想在 R 里读一个骨头/器官的网格 → 用当前 3.0 STL + `rgl`。
+- 想要 4.3 全分辨率，或只取心脏、肺、脑、肠 → 用 4.3 API 的 `bp3d_subset.py`。
+- 想看交互式解剖浏览器怎么做 → 看 Human Atlas。
+- 用 MATLAB → 才考虑 BodyParts3D-Matlab；它旧、且是 99% 简化数据。
+
+**许可注意**：不同版本/来源的许可文本不完全一致。当前 3.0 STL 克隆按上游 `LICENSE_content`（CC BY-SA 2.1 JP）；Human Atlas 的 `ATTRIBUTION.md` 称官方许可在 2025-02-27 更新为 CC BY 4.0；4.3 API 仍标 CC BY-SA 2.1 JP。再分发前以对应版本的官方许可为准。
+
 ## 体积警告
 
 上游仓库约 **930 MB**，不要直接 `git clone` 全量。使用本项目的脚本：
