@@ -32,3 +32,6 @@ Thumbs.db
 .idea/
 
 **/*.quarto_ipynb
+
+# External resources (optional, large)
+external/

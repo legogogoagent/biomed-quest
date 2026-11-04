@@ -263,7 +263,9 @@ biomed-quest/
 ├── journal/                  # 每周复盘 + ai-log.md
 ├── templates/                # 任务卡、复盘、代码审查、Boss 战报
 ├── solutions/                # 通关后解锁的参考解，不提前下发
-├── scripts/                  # 静态校验与维护脚本
+├── scripts/                  # 静态校验、外部资源下载脚本
+├── resources/                # 外部资源索引与使用说明
+├── external/                 # 按需下载的外部资源（gitignored）
 └── assets/badges/            # 自绘像素风 SVG 徽章
 ```
 

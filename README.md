@@ -177,9 +177,15 @@ data/           原始与处理后的数据
 R/              可复用函数
 journal/        每周复盘与 AI 日志
 templates/      任务卡、复盘、审查模板
+resources/      外部资源索引与按需下载脚本
 assets/badges/  自绘像素徽章
 docs/           设计文档与学习笔记
 ```
+
+## 📚 图书馆（外部资源）
+
+- [BodyParts3D](resources/bodyparts3d/README.md)：人体解剖 3D 模型（约 930 MB），按需下载，不直接 vendoring。
+- 收录规则与更多资源见 [resources/README.md](resources/README.md)。
 
 ## 📄 License
 
