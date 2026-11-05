@@ -917,7 +917,14 @@ import trimesh
 import yaml
 
 UNIT_SCALE = 0.001
-AXIS_ROTATION = np.eye(3)
+# BodyParts3D is Z-up with -Y anterior. Rotate -90° about X to get Y-up, +Z anterior.
+AXIS_ROTATION = np.array(
+    [
+        [1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0],
+        [0.0, -1.0, 0.0],
+    ]
+)
 
 
 def read_parts(path: Path):
@@ -1003,6 +1010,7 @@ def main():
     parser.add_argument("--data-root", default="external/bodyparts3d")
     parser.add_argument("--out", default="public/assets/elbow")
     parser.add_argument("--only", default=None)
+    parser.add_argument("--skip-sections", action="store_true")
     args = parser.parse_args()
 
     data_root = Path(args.data_root)
@@ -1058,7 +1066,7 @@ def main():
         json.dumps(stats, indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
-    if args.only:
+    if args.only or args.skip_sections:
         return
 
     for plane in planes:
@@ -1071,8 +1079,15 @@ def main():
                     mesh, normal * multiplier, origin, cap=True
                 )
                 if sliced.is_empty or sliced.faces.shape[0] == 0:
-                    raise SystemExit(f"{plane['id']}/{side}: empty slice for {slug}")
+                    print(
+                        f"skip {slug} for {plane['id']}/{side}: "
+                        "no geometry on this side"
+                    )
+                    continue
                 scene.add_geometry(sliced, node_name=slug, geom_name=slug)
+            if len(scene.geometry) == 0:
+                print(f"skip {plane['id']}/{side}: no structures intersect")
+                continue
             target = out / f"section-{plane['id']}-{side}.glb"
             scene.export(target)
             print(f"wrote {target}")
@@ -1086,20 +1101,20 @@ if __name__ == "__main__":
 
 Run:
 ```bash
-python3 -m pip install trimesh numpy pyyaml
+python3 -m pip install trimesh numpy pyyaml shapely rtree mapbox-earcut
 python3 scripts/preprocess.py --only humerus_right
 ```
 
 Expected: 输出 `humerus_right: ... tris ...`，生成 `public/assets/elbow/humerus_right.glb` 与 `mesh-stats.json`。若 bbox 报错，调整 `UNIT_SCALE` 或 `AXIS_ROTATION` 后重跑。
 
-- [ ] **Step 5: 跑全量预处理**
+- [ ] **Step 5: 跑全量预处理（先跳过切面）**
 
 Run:
 ```bash
-python3 scripts/preprocess.py
+python3 scripts/preprocess.py --skip-sections
 ```
 
-Expected: 每个结构一个 GLB；生成 `section-sagittal-a.glb`、`-b`、`section-coronal-a/b`、`section-axial-a/b`。若某个 structure 的 `lookups` 中某个名字找不到，按错误提示的 close matches 修改 `data-src/structures.yaml` 后重跑。
+Expected: 14 个结构 GLB 与 `mesh-stats.json`。此时不生成切面模型，因为 `section-planes.yaml` 的 origin 仍是 0；切面在 Task 9 校准肘中心后再生成。若某个 structure 的 `lookups` 中某个名字找不到，按错误提示的 close matches 修改 `data-src/structures.yaml` 后重跑。
 
 - [ ] **Step 6: 提交**
 
@@ -2178,6 +2193,7 @@ function Scene() {
       <OrbitControls
         ref={controlsRef}
         makeDefault
+        target={[-0.17, 1.07, 0.08]}
         minDistance={0.15}
         maxDistance={2}
       />
@@ -2189,7 +2205,7 @@ export function AnatomyViewer() {
   return (
     <div className="viewer">
       <Canvas
-        camera={{ position: [0.4, 0.25, 0.6], fov: 45, near: 0.01, far: 10 }}
+        camera={{ position: [-0.17, 1.07, 0.6], fov: 45, near: 0.01, far: 10 }}
       >
         <Scene />
       </Canvas>
@@ -2418,7 +2434,7 @@ python3 scripts/preprocess.py
 npm run build:data
 ```
 
-Expected: `joints.json` 与 `attachments.json` 坐标不再是 0；三标准面切面围绕肘部生成，而不是模型原点。
+Expected: `joints.json` 与 `attachments.json` 坐标不再是 0；三标准面切面围绕肘部生成，而不是模型原点。某个结构不与切面相交时会打印 `skip ... no geometry on this side`，这是正常的，不应阻塞其余结构。
 
 `restLength` 可以保持 0：MovePanel 会在首次加载时用 0° 屈曲、0° 旋转计算基线。若你希望把基线固化到数据里，把 Move 模式首次读数写回 `attachments.yaml` 的 `restLength`。
 
@@ -3418,7 +3434,7 @@ Create `README.md`:
 ```bash
 npm install
 npm run fetch:data
-python3 -m pip install trimesh numpy pyyaml
+python3 -m pip install trimesh numpy pyyaml shapely rtree mapbox-earcut
 npm run preprocess
 npm run build:data
 npm run dev
