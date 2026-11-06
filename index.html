@@ -2414,6 +2414,28 @@ body.debug-open {
   }
 }
 
+.debug-endpoint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px 8px;
+}
+
+.debug-endpoint label {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.debug-endpoint input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.debug-endpoint .module-note {
+  flex-basis: 100%;
+}
+
 </style>
 </head>
 <body>
@@ -2458,7 +2480,8 @@ body.debug-open {
     logFadeMs: 8000,
     readoutHz: 10,
     toastMs: 3000,
-    issueUrl: 'https://github.com/legogogoagent/biomed-quest/issues/new'
+    issueUrl: 'https://github.com/legogogoagent/biomed-quest/issues/new',
+    logEndpoint: ''
   };
 })(window.SC = window.SC || {});
 
@@ -4305,6 +4328,10 @@ body.debug-open {
     fab: null,
     badge: null,
     issueLink: null,
+    githubBtn: null,
+    endpointInput: null,
+    endpointStatus: null,
+    endpointKey: 'sensorcraft-log-endpoint',
     init: function () {
       var app = document.getElementById('app');
       if (!app) return;
@@ -4349,8 +4376,24 @@ body.debug-open {
 
       var note = dom.el('div', {
         class: 'debug-note',
-        text: '「提交到 GitHub」会打开新建 Issue 页面，并把完整日志复制到剪贴板；确认后粘贴并提交。不会自动上传，也不需要把 GitHub token 放进页面。日志会公开，请不要包含隐私信息。'
+        text: '「提交到 GitHub」：配置了直传端点就直接创建 Issue；未配置则打开新建 Issue 页面并把日志复制到剪贴板。token 只在服务端，不会进入网页。日志会公开，请不要包含隐私信息。'
       });
+
+      var endpointRow = dom.el('div', { class: 'debug-endpoint' });
+      endpointRow.appendChild(dom.el('label', { for: 'debug-endpoint-input', text: '直传端点（可选）' }));
+      var endpointInput = dom.el('input', {
+        id: 'debug-endpoint-input',
+        class: 'mc-select',
+        type: 'url',
+        placeholder: 'https://sensorcraft-log.<subdomain>.workers.dev/logs',
+        autocomplete: 'off',
+        spellcheck: 'false'
+      });
+      var endpointSave = dom.el('button', { class: 'mc-btn tiny', type: 'button', text: '保存' });
+      var endpointStatus = dom.el('span', { class: 'module-note', id: 'debug-endpoint-status', text: '' });
+      endpointRow.appendChild(endpointInput);
+      endpointRow.appendChild(endpointSave);
+      endpointRow.appendChild(endpointStatus);
 
       var issueLink = dom.el('a', {
         class: 'mc-btn debug-issue-link',
@@ -4365,6 +4408,7 @@ body.debug-open {
       win.appendChild(head);
       win.appendChild(toolbar);
       win.appendChild(note);
+      win.appendChild(endpointRow);
       win.appendChild(issueLink);
       win.appendChild(logBox);
       panel.appendChild(win);
@@ -4373,6 +4417,9 @@ body.debug-open {
       debug.panel = panel;
       debug.logBox = logBox;
       debug.issueLink = issueLink;
+      debug.githubBtn = githubBtn;
+      debug.endpointInput = endpointInput;
+      debug.endpointStatus = endpointStatus;
 
       fab.addEventListener('click', debug.open);
       closeBtn.addEventListener('click', debug.close);
@@ -4382,6 +4429,7 @@ body.debug-open {
       copyBtn.addEventListener('click', debug.copy);
       githubBtn.addEventListener('click', debug.submit);
       downloadBtn.addEventListener('click', debug.download);
+      endpointSave.addEventListener('click', debug.saveEndpoint);
       clearBtn.addEventListener('click', function () {
         SC.core.log.clear();
         debug.render();
@@ -4396,6 +4444,7 @@ body.debug-open {
         }
       }, true);
 
+      debug.loadEndpoint();
       setInterval(debug.updateBadge, 2000);
       debug.updateBadge();
     },
@@ -4418,6 +4467,50 @@ body.debug-open {
       if (!debug.logBox) return;
       debug.logBox.textContent = debug.buildText();
       debug.logBox.scrollTop = debug.logBox.scrollHeight;
+    },
+    loadEndpoint: function () {
+      var value = '';
+      try {
+        value = localStorage.getItem(debug.endpointKey) || '';
+      } catch (error) {
+        value = '';
+      }
+      if (!value) value = SC.config.logEndpoint || '';
+      debug.endpointInput.value = value;
+      SC.config.logEndpoint = value;
+      debug.updateEndpointStatus();
+    },
+    updateEndpointStatus: function () {
+      if (!debug.endpointStatus) return;
+      var value = (debug.endpointInput.value || '').trim();
+      debug.endpointStatus.textContent = value
+        ? '已配置：提交时直接创建 Issue'
+        : '未配置：使用预填 Issue 页面';
+      debug.endpointStatus.className = 'module-note' + (value ? ' ok-text' : '');
+    },
+    saveEndpoint: function () {
+      var value = (debug.endpointInput.value || '').trim();
+      if (value && !/^https?:\/\//i.test(value)) {
+        SC.ui.toast.show({ icon: 'barrier', title: '端点格式不对', subtitle: '需要以 https:// 开头' });
+        return;
+      }
+      if (value && !/^https:\/\//i.test(value) && !/^http:\/\/(localhost|127\.0\.0\.1)/i.test(value)) {
+        SC.ui.toast.show({ icon: 'barrier', title: '请使用 HTTPS', subtitle: '只有 localhost 可以用 http://' });
+        return;
+      }
+      try {
+        if (value) localStorage.setItem(debug.endpointKey, value);
+        else localStorage.removeItem(debug.endpointKey);
+      } catch (error) {
+        /* localStorage can be unavailable in private mode */
+      }
+      SC.config.logEndpoint = value;
+      debug.updateEndpointStatus();
+      SC.ui.toast.show({
+        icon: value ? 'map' : 'barrier',
+        title: value ? '直传端点已保存' : '直传端点已清除',
+        subtitle: value ? '提交时会直接创建 Issue' : '将使用预填 Issue 页面'
+      });
     },
     buildText: function () {
       var summary = SC.core.probe.summary();
@@ -4473,6 +4566,72 @@ body.debug-open {
     },
     submit: function () {
       var full = debug.buildText();
+      var endpoint = (debug.endpointInput.value || '').trim();
+      if (endpoint && !/^https?:\/\//i.test(endpoint)) {
+        SC.ui.toast.show({ icon: 'barrier', title: '端点格式不对', subtitle: '改用预填 Issue 页面' });
+        endpoint = '';
+      }
+      if (endpoint) debug.submitDirect(endpoint, full);
+      else debug.openIssue(full);
+    },
+    submitDirect: function (endpoint, full) {
+      var title = 'SENSORCRAFT 调试日志 ' + new Date().toLocaleString('zh-CN');
+      var payload = {
+        title: title,
+        body: full.slice(0, 18000),
+        source: 'sensorcraft',
+        page: location.href
+      };
+      var controller = new AbortController();
+      var timer = setTimeout(function () {
+        controller.abort();
+      }, 15000);
+
+      debug.githubBtn.disabled = true;
+      debug.githubBtn.textContent = '上传中…';
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      })
+        .then(function (response) {
+          return response.json().catch(function () {
+            return {};
+          }).then(function (data) {
+            if (!response.ok || !data.ok) {
+              throw new Error(data.message || data.error || ('HTTP ' + response.status));
+            }
+            return data;
+          });
+        })
+        .then(function (data) {
+          var issue = data.issue || {};
+          debug.issueLink.href = issue.url || SC.config.issueUrl;
+          debug.issueLink.textContent = issue.number ? '查看 Issue #' + issue.number : '查看 Issue';
+          debug.issueLink.hidden = false;
+          SC.ui.toast.show({
+            icon: 'map',
+            title: '日志已提交',
+            subtitle: issue.number ? 'Issue #' + issue.number : 'GitHub Issue 已创建'
+          });
+        })
+        .catch(function (error) {
+          SC.ui.toast.show({
+            icon: 'barrier',
+            title: '直传失败',
+            subtitle: (error && error.message ? error.message : '网络错误') + '，改用预填 Issue'
+          });
+          debug.openIssue(full);
+        })
+        .finally(function () {
+          clearTimeout(timer);
+          debug.githubBtn.disabled = false;
+          debug.githubBtn.textContent = '提交到 GitHub';
+        });
+    },
+    openIssue: function (full) {
       var title = 'SENSORCRAFT 调试日志 ' + new Date().toLocaleString('zh-CN');
       var maxBody = 4000;
       var truncated = full.length > maxBody;
@@ -4500,6 +4659,7 @@ body.debug-open {
       var opened = window.open(url, '_blank', 'noopener');
       if (!opened) {
         debug.issueLink.href = url;
+        debug.issueLink.textContent = '打开 GitHub Issue 页面';
         debug.issueLink.hidden = false;
         SC.ui.toast.show({
           icon: 'barrier',
