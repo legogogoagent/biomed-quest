@@ -6470,6 +6470,11 @@ input[type="range"]:disabled {
 
   var WAVES = ['sine', 'square', 'sawtooth', 'triangle'];
 
+  function isIOS() {
+    return /iP(hone|ad|od)/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
   SC.registerSensor({
     id: 'speaker',
     name: '扬声器/语音',
@@ -6483,8 +6488,14 @@ input[type="range"]:disabled {
       if (!feature.speechSynthesis) {
         return { status: 'partial', reason: '可以播放音调，但当前浏览器不支持语音朗读。' };
       }
+      if (isIOS()) {
+        return {
+          status: 'partial',
+          reason: '音调与朗读可用；iOS Safari 通常拒绝网页语音识别（service-not-allowed）。'
+        };
+      }
       if (!feature.speechRecognition) {
-        return { status: 'partial', reason: '音调与朗读可用；语音识别在 iOS Safari 通常不可用。' };
+        return { status: 'partial', reason: '音调与朗读可用；当前浏览器不支持语音识别。' };
       }
       return { status: 'ready' };
     },
@@ -6532,7 +6543,8 @@ input[type="range"]:disabled {
         '</div>' +
         '<div class="module-toolbar">' +
         '<button class="mc-btn" type="button" id="asr-btn" disabled>语音识别（不可用）</button>' +
-        '<span class="module-note" id="asr-note">iOS Safari 通常不提供网页语音识别。</span>' +
+        '<button class="mc-btn" type="button" id="asr-mic">打开麦克风</button>' +
+        '<span class="module-note" id="asr-note">正在检测语音识别能力…</span>' +
         '</div></div>';
 
       ctx.setReadout(
@@ -6570,7 +6582,10 @@ input[type="range"]:disabled {
       var toneVolInput = ctx.root.querySelector('#tone-vol');
       var toneVolValue = ctx.root.querySelector('#tone-vol-val');
       var asrBtn = ctx.root.querySelector('#asr-btn');
+      var asrMic = ctx.root.querySelector('#asr-mic');
       var asrNote = ctx.root.querySelector('#asr-note');
+      var asrState = ctx.feature.speechRecognition ? (isIOS() ? '受限（iOS）' : '可用') : '不可用';
+      var asrDisabled = !ctx.feature.speechRecognition;
 
       var audioContext = null;
       var oscillator = null;
@@ -6604,7 +6619,7 @@ input[type="range"]:disabled {
         setReadout('#spk-r-wave', wave);
         setReadout('#spk-r-status', playing ? '播放中' : '停止');
         setReadout('#spk-r-tts', ctx.feature.speechSynthesis ? '可用' : '不可用');
-        setReadout('#spk-r-asr', ctx.feature.speechRecognition ? '可用' : '不可用');
+        setReadout('#spk-r-asr', asrState);
         var selected = voicesCache[Number(voiceSelect.value)];
         setReadout('#spk-r-voice', selected ? selected.name : '默认');
       }
@@ -6796,18 +6811,28 @@ input[type="range"]:disabled {
         if (gain) gain.gain.value = Math.max(0.0001, toneVolume * 0.25);
       });
 
+      asrMic.addEventListener('click', function () {
+        SC.core.lifecycle.open('microphone');
+      });
+
       if (ctx.feature.speechRecognition) {
         var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
         asrBtn.disabled = false;
-        asrBtn.textContent = '开始语音识别';
-        asrNote.textContent = '点击后说话，浏览器会转写。';
+        asrBtn.textContent = isIOS() ? '尝试语音识别' : '开始语音识别';
+        asrNote.textContent = isIOS()
+          ? 'iOS Safari 常返回 service-not-allowed；这不是麦克风权限问题。'
+          : '点击后说话，浏览器会转写。';
+
         asrBtn.addEventListener('click', function () {
+          if (asrDisabled) return;
           if (recognition) {
             recognition.stop();
             recognition = null;
-            asrBtn.textContent = '开始语音识别';
+            asrBtn.textContent = isIOS() ? '尝试语音识别' : '开始语音识别';
+            asrNote.textContent = '识别已停止。';
             return;
           }
+          var errorCode = null;
           recognition = new SpeechRecognitionCtor();
           recognition.lang = 'zh-CN';
           recognition.interimResults = true;
@@ -6818,20 +6843,74 @@ input[type="range"]:disabled {
               text += event.results[i][0].transcript;
             }
             asrNote.textContent = '识别：' + text;
+            asrState = '可用';
+            refresh();
           };
           recognition.onerror = function (event) {
-            asrNote.textContent = '识别失败：' + (event.error || '未知错误');
+            var code = event.error || 'unknown';
+            errorCode = code;
+            var message;
+            if (code === 'service-not-allowed' || code === 'not-allowed') {
+              message = '浏览器拒绝语音识别服务（' + code + '）。iOS Safari 不开放网页语音识别，这不是麦克风权限问题；可以改用 TTS、麦克风可视化或原生 App。';
+              asrState = '不可用（' + code + '）';
+              asrDisabled = true;
+              asrBtn.disabled = true;
+              asrBtn.textContent = '语音识别不可用';
+              ctx.toast({
+                icon: 'barrier',
+                title: '语音识别被系统拒绝',
+                subtitle: 'iOS Safari 不开放网页语音识别'
+              });
+            } else if (code === 'no-speech') {
+              message = '没有听到语音，请靠近麦克风再说一次。';
+              asrState = '可用';
+            } else if (code === 'audio-capture') {
+              message = '找不到麦克风，或麦克风被其他 App 占用。';
+              asrState = '麦克风不可用';
+            } else if (code === 'network') {
+              message = '语音识别服务网络错误，请检查网络后重试。';
+              asrState = '网络错误';
+            } else if (code === 'aborted') {
+              message = '识别已取消。';
+            } else if (code === 'language-not-supported') {
+              message = '当前浏览器的语音识别不支持中文。';
+              asrState = '语言不支持';
+              asrDisabled = true;
+              asrBtn.disabled = true;
+              asrBtn.textContent = '语音识别不可用';
+            } else {
+              message = '识别失败：' + code;
+            }
+            asrNote.textContent = message;
             recognition = null;
-            asrBtn.textContent = '开始语音识别';
+            if (!asrDisabled) {
+              asrBtn.textContent = isIOS() ? '重试语音识别' : '开始语音识别';
+            }
+            refresh();
+            SC.core.log.add('语音识别错误：' + code);
           };
           recognition.onend = function () {
             recognition = null;
-            asrBtn.textContent = '开始语音识别';
+            if (!asrDisabled) {
+              asrBtn.textContent = isIOS() ? '尝试语音识别' : '开始语音识别';
+              if (!errorCode) asrState = '可用';
+            }
+            refresh();
           };
-          recognition.start();
-          asrBtn.textContent = '停止识别';
-          asrNote.textContent = '正在听…';
+          try {
+            recognition.start();
+            asrBtn.textContent = '停止识别';
+            asrNote.textContent = '正在听…';
+          } catch (error) {
+            recognition = null;
+            asrNote.textContent = '无法启动语音识别：' + (error && error.message ? error.message : '未知错误');
+            asrBtn.textContent = isIOS() ? '尝试语音识别' : '开始语音识别';
+            refresh();
+          }
         });
+      } else {
+        asrBtn.textContent = '语音识别不可用';
+        asrNote.textContent = '当前浏览器不支持 SpeechRecognition；可以用「打开麦克风」查看声音。';
       }
 
       if (window.speechSynthesis) {
