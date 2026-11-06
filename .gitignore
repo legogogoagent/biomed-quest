@@ -35,3 +35,6 @@ Thumbs.db
 
 # External resources (optional, large)
 external/
+
+# SensorCraft build output
+webapp/sensor-craft/dist/
