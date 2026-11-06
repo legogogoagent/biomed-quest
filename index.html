@@ -2298,6 +2298,122 @@ input[type="range"]:disabled {
   margin-top: 8px;
 }
 
+/* debug log + GitHub issue bridge */
+.debug-fab {
+  position: fixed;
+  right: 10px;
+  bottom: calc(36px + var(--safe-bottom));
+  z-index: 60;
+  min-width: 52px;
+}
+
+.debug-fab.has-errors {
+  box-shadow: inset 2px 2px 0 #ffffff, inset -2px -2px 0 #373737, 0 0 0 2px var(--redstone);
+}
+
+.debug-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  background: var(--redstone);
+  color: #ffffff;
+  border: 1px solid #000;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.debug-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.74);
+}
+
+.debug-window {
+  width: min(94vw, 820px);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: #1b1b1f;
+  border: 3px solid #373737;
+  box-shadow: 0 0 0 2px #000, 8px 8px 0 rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.debug-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  background-color: var(--panel);
+  color: var(--text-dark);
+  border-bottom: 3px solid var(--grass-dark);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.debug-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px 0;
+}
+
+.debug-note {
+  padding: 8px 10px;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.debug-issue-link {
+  align-self: flex-start;
+  margin: 0 10px 8px;
+}
+
+.debug-log {
+  flex: 1;
+  min-height: 180px;
+  max-height: 55vh;
+  margin: 0 10px 10px;
+  padding: 10px;
+  overflow: auto;
+  background: #0f0f12;
+  border: 2px solid #000;
+  box-shadow: var(--bevel-in);
+  color: #d8d8d8;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+body.debug-open {
+  overflow: hidden;
+}
+
+@media (max-width: 520px) {
+  .debug-window {
+    width: 96vw;
+    max-height: 92vh;
+  }
+
+  .debug-log {
+    max-height: 52vh;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2341,7 +2457,8 @@ input[type="range"]:disabled {
     maxLogLines: 3,
     logFadeMs: 8000,
     readoutHz: 10,
-    toastMs: 3000
+    toastMs: 3000,
+    issueUrl: 'https://github.com/legogogoagent/biomed-quest/issues/new'
   };
 })(window.SC = window.SC || {});
 
@@ -2585,14 +2702,20 @@ input[type="range"]:disabled {
   var log = (SC.core.log = {
     el: null,
     lines: [],
+    history: [],
+    maxHistory: 200,
     ready: false,
+    consolePatched: false,
     init: function () {
       if (log.ready) return;
       log.el = document.getElementById('chat-log');
-      if (!log.el) return;
       log.ready = true;
+      log.captureConsole();
       window.addEventListener('error', function (event) {
-        log.add('脚本错误：' + (event.message || '未知错误'));
+        var where = event.filename
+          ? ' @ ' + event.filename + ':' + (event.lineno || 0) + ':' + (event.colno || 0)
+          : '';
+        log.add('脚本错误：' + (event.message || '未知错误') + where);
       });
       window.addEventListener('unhandledrejection', function (event) {
         var reason = event.reason;
@@ -2600,13 +2723,44 @@ input[type="range"]:disabled {
         log.add('未处理的异步错误：' + message);
       });
     },
+    captureConsole: function () {
+      if (log.consolePatched) return;
+      log.consolePatched = true;
+      ['error', 'warn'].forEach(function (level) {
+        var original = console[level];
+        if (typeof original !== 'function') return;
+        console[level] = function () {
+          try {
+            var parts = Array.prototype.map.call(arguments, function (arg) {
+              if (arg instanceof Error) return arg.stack || arg.message;
+              if (typeof arg === 'object' && arg !== null) {
+                try {
+                  return JSON.stringify(arg);
+                } catch (error) {
+                  return String(arg);
+                }
+              }
+              return String(arg);
+            });
+            log.add('[console.' + level + '] ' + parts.join(' '));
+          } catch (error) {
+            /* never break the console */
+          }
+          return original.apply(console, arguments);
+        };
+      });
+    },
     add: function (text) {
+      var value = String(text);
+      log.history.push({ time: new Date().toISOString(), text: value });
+      while (log.history.length > log.maxHistory) log.history.shift();
+
       if (!log.el) log.el = document.getElementById('chat-log');
       if (!log.el) return;
       var line = dom.el('div', { class: 'chat-line' });
       var prefix = dom.el('span', { class: 'chat-prefix', text: '[SENSORCRAFT]' });
       line.appendChild(prefix);
-      line.appendChild(document.createTextNode(' ' + String(text)));
+      line.appendChild(document.createTextNode(' ' + value));
       log.el.appendChild(line);
       log.lines.push(line);
 
@@ -2623,6 +2777,21 @@ input[type="range"]:disabled {
           if (index >= 0) log.lines.splice(index, 1);
         }, 450);
       }, SC.config.logFadeMs || 8000);
+    },
+    exportText: function () {
+      if (!log.history.length) return '（暂无日志）';
+      return log.history
+        .map(function (entry) {
+          return '[' + entry.time + '] ' + entry.text;
+        })
+        .join('\n');
+    },
+    clear: function () {
+      log.history = [];
+      log.lines.slice().forEach(function (line) {
+        if (line.parentNode) line.parentNode.removeChild(line);
+      });
+      log.lines = [];
     }
   });
 })(window.SC = window.SC || {});
@@ -4119,6 +4288,234 @@ input[type="range"]:disabled {
       setTimeout(function () {
         start.focus();
       }, 50);
+    }
+  });
+})(window.SC = window.SC || {});
+
+</script>
+  <script>
+/* ./js/ui/debug.js */
+(function (SC) {
+  'use strict';
+  var dom = SC.core.dom;
+
+  var debug = (SC.ui.debug = {
+    panel: null,
+    logBox: null,
+    fab: null,
+    badge: null,
+    issueLink: null,
+    init: function () {
+      var app = document.getElementById('app');
+      if (!app) return;
+
+      var fab = dom.el('button', {
+        class: 'mc-btn tiny debug-fab',
+        type: 'button',
+        id: 'debug-fab',
+        text: 'LOG',
+        title: '打开调试日志 / 提交到 GitHub'
+      });
+      var badge = dom.el('span', { class: 'debug-badge', id: 'debug-badge', hidden: true, text: '0' });
+      fab.appendChild(badge);
+      app.appendChild(fab);
+      debug.fab = fab;
+      debug.badge = badge;
+
+      var panel = dom.el('div', {
+        id: 'debug-panel',
+        class: 'debug-panel',
+        role: 'dialog',
+        'aria-modal': 'true',
+        'aria-label': '调试日志',
+        hidden: true
+      });
+      var win = dom.el('div', { class: 'debug-window' });
+
+      var head = dom.el('div', { class: 'debug-head' });
+      head.appendChild(dom.el('span', { text: '调试日志 / DEBUG LOG' }));
+      var closeBtn = dom.el('button', { class: 'mc-btn tiny', type: 'button', text: '关闭' });
+      head.appendChild(closeBtn);
+
+      var toolbar = dom.el('div', { class: 'debug-toolbar' });
+      var copyBtn = dom.el('button', { class: 'mc-btn', type: 'button', text: '复制日志' });
+      var githubBtn = dom.el('button', { class: 'mc-btn primary', type: 'button', text: '提交到 GitHub' });
+      var downloadBtn = dom.el('button', { class: 'mc-btn', type: 'button', text: '下载 .txt' });
+      var clearBtn = dom.el('button', { class: 'mc-btn danger', type: 'button', text: '清空' });
+      toolbar.appendChild(copyBtn);
+      toolbar.appendChild(githubBtn);
+      toolbar.appendChild(downloadBtn);
+      toolbar.appendChild(clearBtn);
+
+      var note = dom.el('div', {
+        class: 'debug-note',
+        text: '「提交到 GitHub」会打开新建 Issue 页面，并把完整日志复制到剪贴板；确认后粘贴并提交。不会自动上传，也不需要把 GitHub token 放进页面。日志会公开，请不要包含隐私信息。'
+      });
+
+      var issueLink = dom.el('a', {
+        class: 'mc-btn debug-issue-link',
+        target: '_blank',
+        rel: 'noopener',
+        hidden: true,
+        text: '打开 GitHub Issue 页面'
+      });
+
+      var logBox = dom.el('pre', { class: 'debug-log', id: 'debug-log', text: '' });
+
+      win.appendChild(head);
+      win.appendChild(toolbar);
+      win.appendChild(note);
+      win.appendChild(issueLink);
+      win.appendChild(logBox);
+      panel.appendChild(win);
+      app.appendChild(panel);
+
+      debug.panel = panel;
+      debug.logBox = logBox;
+      debug.issueLink = issueLink;
+
+      fab.addEventListener('click', debug.open);
+      closeBtn.addEventListener('click', debug.close);
+      panel.addEventListener('click', function (event) {
+        if (event.target === panel) debug.close();
+      });
+      copyBtn.addEventListener('click', debug.copy);
+      githubBtn.addEventListener('click', debug.submit);
+      downloadBtn.addEventListener('click', debug.download);
+      clearBtn.addEventListener('click', function () {
+        SC.core.log.clear();
+        debug.render();
+        SC.ui.toast.show({ icon: 'barrier', title: '日志已清空', subtitle: '从下一条事件重新记录' });
+      });
+
+      window.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !panel.hidden) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          debug.close();
+        }
+      }, true);
+
+      setInterval(debug.updateBadge, 2000);
+      debug.updateBadge();
+    },
+    open: function () {
+      if (!debug.panel) return;
+      debug.render();
+      debug.issueLink.hidden = true;
+      debug.panel.hidden = false;
+      document.body.classList.add('debug-open');
+      var close = debug.panel.querySelector('.debug-head .mc-btn');
+      if (close) close.focus();
+    },
+    close: function () {
+      if (!debug.panel) return;
+      debug.panel.hidden = true;
+      document.body.classList.remove('debug-open');
+      if (debug.fab) debug.fab.focus();
+    },
+    render: function () {
+      if (!debug.logBox) return;
+      debug.logBox.textContent = debug.buildText();
+      debug.logBox.scrollTop = debug.logBox.scrollHeight;
+    },
+    buildText: function () {
+      var summary = SC.core.probe.summary();
+      var feature = SC.core.probe.feature;
+      var enabledFeatures = Object.keys(feature)
+        .filter(function (key) {
+          return feature[key] === true;
+        })
+        .join(', ');
+      var current = SC.core.lifecycle.current;
+      var lines = [
+        'SENSORCRAFT 调试日志',
+        '时间: ' + new Date().toISOString(),
+        '版本: ' + SC.version,
+        '页面: ' + location.href,
+        '当前模块: ' + (current ? current.id : 'BAG'),
+        '安全上下文: ' + (window.isSecureContext !== false ? 'YES' : 'NO'),
+        '视口: ' + window.innerWidth + 'x' + window.innerHeight + ' @' + (window.devicePixelRatio || 1),
+        'UA: ' + navigator.userAgent,
+        '平台: ' + (navigator.platform || '--'),
+        '权限状态: ' + JSON.stringify(SC.core.permissions.state),
+        '屏幕常亮: ' + (SC.core.wakeLock.enabled ? 'ON' : 'OFF'),
+        '卡片: ' + summary.ready + ' ready / ' + summary.partial + ' partial / ' + summary.locked + ' locked / ' + summary.info + ' info',
+        '可用特性: ' + (enabledFeatures || '--'),
+        '',
+        '--- 日志 ---',
+        SC.core.log.exportText()
+      ];
+      return lines.join('\n');
+    },
+    copy: function () {
+      dom.copyText(debug.buildText())
+        .then(function () {
+          SC.ui.toast.show({ icon: 'map', title: '日志已复制', subtitle: '可以粘贴到 GitHub Issue 或聊天里' });
+        })
+        .catch(function () {
+          SC.ui.toast.show({ icon: 'barrier', title: '复制失败', subtitle: '请手动长按选择日志文本' });
+        });
+    },
+    download: function () {
+      var blob = new Blob([debug.buildText()], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'sensorcraft-log-' + new Date().toISOString().replace(/[:.]/g, '-') + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () {
+        URL.revokeObjectURL(url);
+      }, 3000);
+      SC.ui.toast.show({ icon: 'map', title: '日志已下载', subtitle: '可以把 .txt 附件拖进 GitHub Issue' });
+    },
+    submit: function () {
+      var full = debug.buildText();
+      var title = 'SENSORCRAFT 调试日志 ' + new Date().toLocaleString('zh-CN');
+      var maxBody = 4000;
+      var truncated = full.length > maxBody;
+      var body = truncated
+        ? full.slice(0, maxBody) + '\n\n…（日志过长，完整内容已复制到剪贴板，请粘贴到这里）'
+        : full;
+      var url = SC.config.issueUrl + '?title=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(body);
+
+      dom.copyText(full)
+        .then(function () {
+          SC.ui.toast.show({
+            icon: 'map',
+            title: '完整日志已复制',
+            subtitle: '在 GitHub Issue 页面粘贴后提交'
+          });
+        })
+        .catch(function () {
+          SC.ui.toast.show({
+            icon: 'barrier',
+            title: '剪贴板不可用',
+            subtitle: '请在日志框里手动复制'
+          });
+        });
+
+      var opened = window.open(url, '_blank', 'noopener');
+      if (!opened) {
+        debug.issueLink.href = url;
+        debug.issueLink.hidden = false;
+        SC.ui.toast.show({
+          icon: 'barrier',
+          title: '弹窗被拦截',
+          subtitle: '点「打开 GitHub Issue 页面」继续'
+        });
+      }
+    },
+    updateBadge: function () {
+      if (!debug.badge) return;
+      var count = SC.core.log.history.filter(function (entry) {
+        return /error|错误|失败|拒绝|Unhandled|未处理/i.test(entry.text);
+      }).length;
+      debug.badge.textContent = count > 99 ? '99+' : String(count);
+      debug.badge.hidden = count === 0;
+      if (debug.fab) debug.fab.classList.toggle('has-errors', count > 0);
     }
   });
 })(window.SC = window.SC || {});
@@ -7763,6 +8160,7 @@ input[type="range"]:disabled {
     SC.ui.hud.setSecureBanner();
     SC.ui.bag.render();
     SC.ui.gate.init();
+    SC.ui.debug.init();
     SC.core.lifecycle.init();
 
     var summary = SC.core.probe.summary();
