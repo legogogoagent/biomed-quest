@@ -58,6 +58,7 @@ check_file "resources/README.md"
 check_file "resources/bodyparts3d/README.md"
 check_file "resources/body-parts-3d-api/README.md"
 check_file "resources/human-atlas/README.md"
+check_file "resources/anatomy-atlas/README.md"
 check_file "resources/bodyparts3d/example_render.R"
 check_file "scripts/fetch_bodyparts3d.sh"
 

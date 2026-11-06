@@ -193,6 +193,7 @@ docs/           设计文档与学习笔记
 - [BodyParts3D 3.0](resources/bodyparts3d/README.md)：人体解剖 3D 模型（约 930 MB），按需下载，不直接 vendoring。
 - [BodyParts3D 4.3 API](resources/body-parts-3d-api/README.md)：4.3 全分辨率 OBJ + Python 子集选择器。
 - [Human Atlas](resources/human-atlas/README.md)：浏览器交互式 3D 解剖参考实现。
+- [Anatomy Atlas](resources/anatomy-atlas/README.md)：126 块肌肉 + 运动库的 3D 参考（应用代码许可待确认，观望）。
 - 收录规则与更多资源见 [resources/README.md](resources/README.md)。
 
 ## 📄 License

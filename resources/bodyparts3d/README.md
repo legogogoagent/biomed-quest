@@ -26,6 +26,7 @@
 | 本项目：`Kevin-Mattheus-Moerman/BodyParts3D` | 3.0 / STL | Julia + STL | 约 930 MB，sparse checkout | 在 R 里读几个 STL、快速可视化 | 当前保留 |
 | [`olivercase/body_parts_3d_api`](https://github.com/olivercase/body_parts_3d_api) | 4.3 / OBJ | Python | Git LFS，3,210 网格；可按子集取 | 要最新全分辨率，或只要心脏/肺/脑 | 收藏为数据源 |
 | [`ashemag/human-atlas`](https://github.com/ashemag/human-atlas) | 4.0 / Web | TypeScript | 约 104 MB，33 MB 几何 | 浏览器交互式解剖、UI/数据管线参考 | 收藏为参考 |
+| [`SirwanAfifi/anatomy-atlas`](https://github.com/SirwanAfifi/anatomy-atlas) | Z-Anatomy/BodyParts3D / Web | JavaScript | 约 36 MB，19.7 MiB 模型 | 肌肉 + 运动库 UX 参考 | 观望；应用代码未标许可 |
 | [`wspr/BodyParts3D-Matlab`](https://github.com/wspr/BodyParts3D-Matlab) | 4.0 / OBJ 99% | MATLAB | 326 KB + 136 MB 数据 | MATLAB 用户 | 本项目不收录 |
 
 **选择建议**：
